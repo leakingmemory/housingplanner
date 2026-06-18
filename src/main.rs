@@ -1,0 +1,21 @@
+//! Desktop entry point (Windows / Linux / macOS).
+//!
+//! `windows_subsystem = "windows"` keeps a console window from popping up
+//! behind the GUI on Windows release builds.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+fn main() -> eframe::Result {
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([1280.0, 800.0])
+            .with_min_inner_size([800.0, 480.0])
+            .with_title("hplan — housing & stay planner"),
+        ..Default::default()
+    };
+
+    eframe::run_native(
+        "hplan",
+        options,
+        Box::new(|cc| Ok(Box::new(hplan::app::PlannerApp::new(cc)))),
+    )
+}

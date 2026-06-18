@@ -1,0 +1,34 @@
+[package]
+name = "hplan"
+version = "0.1.0"
+edition = "2021"
+description = "Housing & stay planner: visualize who stays where, and when, over time."
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "hplan"
+# Build as both a normal Rust lib and a C-ABI dynamic lib so the same code
+# can back the desktop binary and an Android app.
+crate-type = ["lib", "cdylib"]
+
+[[bin]]
+name = "hplan"
+path = "src/main.rs"
+
+[dependencies]
+# "persistence" enables eframe's get_value/set_value storage helpers.
+eframe = { version = "0.34", features = ["persistence"] }
+egui = "0.34"
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+log = "0.4"
+
+# Android-only: provides the activity glue + lets eframe attach the AndroidApp.
+[target.'cfg(target_os = "android")'.dependencies]
+winit = { version = "0.30", features = ["android-native-activity"] }
+android_logger = "0.14"
+# Merges with the main eframe dep to add the Android activity backend.
+eframe = { version = "0.34", features = ["persistence", "android-native-activity"] }
+
+[profile.release]
+opt-level = 2
