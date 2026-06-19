@@ -232,30 +232,84 @@ impl Plan {
 
         let cabin = self.new_id();
         let lodge = self.new_id();
-        self.housings.push(Housing { id: cabin, name: "Cabin A".into(), capacity: 2, notes: String::new() });
-        self.housings.push(Housing { id: lodge, name: "Lodge".into(), capacity: 6, notes: String::new() });
+        self.housings.push(Housing {
+            id: cabin,
+            name: "Cabin A".into(),
+            capacity: 2,
+            notes: String::new(),
+        });
+        self.housings.push(Housing {
+            id: lodge,
+            name: "Lodge".into(),
+            capacity: 6,
+            notes: String::new(),
+        });
 
         let smiths = self.new_id();
         let crew = self.new_id();
-        self.groups.push(Group { id: smiths, name: "Smith family".into(), color: GROUP_PALETTE[0] });
-        self.groups.push(Group { id: crew, name: "Crew".into(), color: GROUP_PALETTE[2] });
+        self.groups.push(Group {
+            id: smiths,
+            name: "Smith family".into(),
+            color: GROUP_PALETTE[0],
+        });
+        self.groups.push(Group {
+            id: crew,
+            name: "Crew".into(),
+            color: GROUP_PALETTE[2],
+        });
 
         let alice = self.new_id();
         let bob = self.new_id();
         let dana = self.new_id();
-        self.persons.push(Person { id: alice, name: "Alice Smith".into(), group: Some(smiths) });
-        self.persons.push(Person { id: bob, name: "Bob Smith".into(), group: Some(smiths) });
-        self.persons.push(Person { id: dana, name: "Dana".into(), group: Some(crew) });
+        self.persons.push(Person {
+            id: alice,
+            name: "Alice Smith".into(),
+            group: Some(smiths),
+        });
+        self.persons.push(Person {
+            id: bob,
+            name: "Bob Smith".into(),
+            group: Some(smiths),
+        });
+        self.persons.push(Person {
+            id: dana,
+            name: "Dana".into(),
+            group: Some(crew),
+        });
 
         let s1 = self.new_id();
         let s2 = self.new_id();
         let s3 = self.new_id();
         let s4 = self.new_id();
-        self.stays.push(Stay { id: s1, subject: Subject::Group(smiths), housing: cabin, arrival: d(0), departure: d(5) });
-        self.stays.push(Stay { id: s2, subject: Subject::Person(dana), housing: lodge, arrival: d(2), departure: d(9) });
-        self.stays.push(Stay { id: s3, subject: Subject::Group(crew), housing: lodge, arrival: d(6), departure: d(12) });
+        self.stays.push(Stay {
+            id: s1,
+            subject: Subject::Group(smiths),
+            housing: cabin,
+            arrival: d(0),
+            departure: d(5),
+        });
+        self.stays.push(Stay {
+            id: s2,
+            subject: Subject::Person(dana),
+            housing: lodge,
+            arrival: d(2),
+            departure: d(9),
+        });
+        self.stays.push(Stay {
+            id: s3,
+            subject: Subject::Group(crew),
+            housing: lodge,
+            arrival: d(6),
+            departure: d(12),
+        });
         // Overlaps the Smiths in Cabin A (capacity 2) on days 2–4 → double booking.
-        self.stays.push(Stay { id: s4, subject: Subject::Person(dana), housing: cabin, arrival: d(2), departure: d(4) });
+        self.stays.push(Stay {
+            id: s4,
+            subject: Subject::Person(dana),
+            housing: cabin,
+            arrival: d(2),
+            departure: d(4),
+        });
     }
 }
 
@@ -264,14 +318,14 @@ pub const DEFAULT_BAR_COLOR: [u8; 3] = [110, 140, 200];
 
 /// A small palette cycled through when creating new groups.
 pub const GROUP_PALETTE: [[u8; 3]; 8] = [
-    [231, 76, 60],   // red
-    [46, 204, 113],  // green
-    [52, 152, 219],  // blue
-    [241, 196, 15],  // yellow
-    [155, 89, 182],  // purple
-    [230, 126, 34],  // orange
-    [26, 188, 156],  // teal
-    [233, 30, 99],   // pink
+    [231, 76, 60],  // red
+    [46, 204, 113], // green
+    [52, 152, 219], // blue
+    [241, 196, 15], // yellow
+    [155, 89, 182], // purple
+    [230, 126, 34], // orange
+    [26, 188, 156], // teal
+    [233, 30, 99],  // pink
 ];
 
 #[cfg(test)]
@@ -316,16 +370,48 @@ mod tests {
         let d = |n| chrono::NaiveDate::from_ymd_opt(2026, 1, n).unwrap();
         let mut plan = Plan::default();
         let (h1, h2) = (plan.new_id(), plan.new_id());
-        plan.housings.push(Housing { id: h1, name: "A".into(), capacity: 9, notes: String::new() });
-        plan.housings.push(Housing { id: h2, name: "B".into(), capacity: 9, notes: String::new() });
+        plan.housings.push(Housing {
+            id: h1,
+            name: "A".into(),
+            capacity: 9,
+            notes: String::new(),
+        });
+        plan.housings.push(Housing {
+            id: h2,
+            name: "B".into(),
+            capacity: 9,
+            notes: String::new(),
+        });
         let p = plan.new_id();
-        plan.persons.push(Person { id: p, name: "P".into(), group: None });
+        plan.persons.push(Person {
+            id: p,
+            name: "P".into(),
+            group: None,
+        });
 
         let (s1, s2, s3) = (plan.new_id(), plan.new_id(), plan.new_id());
         // s1 & s2 overlap in different housings -> clash. s3 is later, no clash.
-        plan.stays.push(Stay { id: s1, subject: Subject::Person(p), housing: h1, arrival: d(1), departure: d(5) });
-        plan.stays.push(Stay { id: s2, subject: Subject::Person(p), housing: h2, arrival: d(3), departure: d(7) });
-        plan.stays.push(Stay { id: s3, subject: Subject::Person(p), housing: h2, arrival: d(10), departure: d(12) });
+        plan.stays.push(Stay {
+            id: s1,
+            subject: Subject::Person(p),
+            housing: h1,
+            arrival: d(1),
+            departure: d(5),
+        });
+        plan.stays.push(Stay {
+            id: s2,
+            subject: Subject::Person(p),
+            housing: h2,
+            arrival: d(3),
+            departure: d(7),
+        });
+        plan.stays.push(Stay {
+            id: s3,
+            subject: Subject::Person(p),
+            housing: h2,
+            arrival: d(10),
+            departure: d(12),
+        });
 
         let clash = plan.subject_double_bookings();
         assert!(clash.contains(&s1) && clash.contains(&s2));
@@ -337,17 +423,47 @@ mod tests {
         let d = |n| chrono::NaiveDate::from_ymd_opt(2026, 1, n).unwrap();
         let mut plan = Plan::default();
         let (h1, h2) = (plan.new_id(), plan.new_id());
-        plan.housings.push(Housing { id: h1, name: "A".into(), capacity: 9, notes: String::new() });
-        plan.housings.push(Housing { id: h2, name: "B".into(), capacity: 9, notes: String::new() });
+        plan.housings.push(Housing {
+            id: h1,
+            name: "A".into(),
+            capacity: 9,
+            notes: String::new(),
+        });
+        plan.housings.push(Housing {
+            id: h2,
+            name: "B".into(),
+            capacity: 9,
+            notes: String::new(),
+        });
         let g = plan.new_id();
-        plan.groups.push(Group { id: g, name: "G".into(), color: [1, 2, 3] });
+        plan.groups.push(Group {
+            id: g,
+            name: "G".into(),
+            color: [1, 2, 3],
+        });
         let p = plan.new_id();
-        plan.persons.push(Person { id: p, name: "P".into(), group: Some(g) });
+        plan.persons.push(Person {
+            id: p,
+            name: "P".into(),
+            group: Some(g),
+        });
 
         let (gs, ps) = (plan.new_id(), plan.new_id());
         // Group booked at A; the member booked individually at B, overlapping.
-        plan.stays.push(Stay { id: gs, subject: Subject::Group(g), housing: h1, arrival: d(1), departure: d(5) });
-        plan.stays.push(Stay { id: ps, subject: Subject::Person(p), housing: h2, arrival: d(2), departure: d(4) });
+        plan.stays.push(Stay {
+            id: gs,
+            subject: Subject::Group(g),
+            housing: h1,
+            arrival: d(1),
+            departure: d(5),
+        });
+        plan.stays.push(Stay {
+            id: ps,
+            subject: Subject::Person(p),
+            housing: h2,
+            arrival: d(2),
+            departure: d(4),
+        });
 
         let clash = plan.subject_double_bookings();
         assert!(clash.contains(&gs) && clash.contains(&ps));
@@ -358,13 +474,34 @@ mod tests {
         let d = |n| chrono::NaiveDate::from_ymd_opt(2026, 1, n).unwrap();
         let mut plan = Plan::default();
         let h = plan.new_id();
-        plan.housings.push(Housing { id: h, name: "A".into(), capacity: 9, notes: String::new() });
+        plan.housings.push(Housing {
+            id: h,
+            name: "A".into(),
+            capacity: 9,
+            notes: String::new(),
+        });
         let p = plan.new_id();
-        plan.persons.push(Person { id: p, name: "P".into(), group: None });
+        plan.persons.push(Person {
+            id: p,
+            name: "P".into(),
+            group: None,
+        });
 
         let (s1, s2) = (plan.new_id(), plan.new_id());
-        plan.stays.push(Stay { id: s1, subject: Subject::Person(p), housing: h, arrival: d(1), departure: d(5) });
-        plan.stays.push(Stay { id: s2, subject: Subject::Person(p), housing: h, arrival: d(3), departure: d(7) });
+        plan.stays.push(Stay {
+            id: s1,
+            subject: Subject::Person(p),
+            housing: h,
+            arrival: d(1),
+            departure: d(5),
+        });
+        plan.stays.push(Stay {
+            id: s2,
+            subject: Subject::Person(p),
+            housing: h,
+            arrival: d(3),
+            departure: d(7),
+        });
 
         assert!(plan.subject_double_bookings().is_empty());
     }
@@ -379,6 +516,9 @@ mod tests {
         let mut plan: Plan = serde_json::from_str(json).expect("deserialize");
         plan.reseed_ids();
         let fresh = plan.new_id();
-        assert!(fresh > 50, "new id {fresh} must not collide with loaded ids");
+        assert!(
+            fresh > 50,
+            "new id {fresh} must not collide with loaded ids"
+        );
     }
 }

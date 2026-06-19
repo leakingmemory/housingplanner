@@ -6,7 +6,10 @@
 
 fn main() -> eframe::Result {
     // Print embedded license attribution and exit (no GUI).
-    if std::env::args().skip(1).any(|a| a == "--licenses" || a == "licenses") {
+    if std::env::args()
+        .skip(1)
+        .any(|a| a == "--licenses" || a == "licenses")
+    {
         housingplanner::licenses::print_to_stdout();
         return Ok(());
     }

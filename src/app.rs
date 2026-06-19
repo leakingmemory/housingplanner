@@ -424,8 +424,16 @@ fn persons_ui(ui: &mut egui::Ui, plan: &mut Plan) {
 
 fn stays_ui(ui: &mut egui::Ui, plan: &mut Plan) {
     // Snapshots for the combo boxes.
-    let housings: Vec<(Id, String)> = plan.housings.iter().map(|h| (h.id, h.name.clone())).collect();
-    let persons: Vec<(Id, String)> = plan.persons.iter().map(|p| (p.id, p.name.clone())).collect();
+    let housings: Vec<(Id, String)> = plan
+        .housings
+        .iter()
+        .map(|h| (h.id, h.name.clone()))
+        .collect();
+    let persons: Vec<(Id, String)> = plan
+        .persons
+        .iter()
+        .map(|p| (p.id, p.name.clone()))
+        .collect();
     let groups: Vec<(Id, String)> = plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
 
     let subject_label = |s: Subject| -> String {
@@ -535,7 +543,11 @@ fn date_edit(ui: &mut egui::Ui, date: &mut NaiveDate) {
     let mut m = date.month() as i32;
     let mut d = date.day() as i32;
 
-    ui.add(egui::DragValue::new(&mut y).range(1900..=2200).fixed_decimals(0));
+    ui.add(
+        egui::DragValue::new(&mut y)
+            .range(1900..=2200)
+            .fixed_decimals(0),
+    );
     ui.add(egui::DragValue::new(&mut m).range(1..=12).prefix("/"));
     ui.add(egui::DragValue::new(&mut d).range(1..=31).prefix("/"));
 
@@ -548,7 +560,11 @@ fn date_edit(ui: &mut egui::Ui, date: &mut NaiveDate) {
 
 /// Number of days in the given month.
 fn days_in_month(year: i32, month: u32) -> u32 {
-    let (ny, nm) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
+    let (ny, nm) = if month == 12 {
+        (year + 1, 1)
+    } else {
+        (year, month + 1)
+    };
     NaiveDate::from_ymd_opt(ny, nm, 1)
         .and_then(|first_of_next| first_of_next.pred_opt())
         .map(|last| last.day())
@@ -570,7 +586,8 @@ fn about_contents(ui: &mut egui::Ui, logo: Option<&egui::TextureHandle>) {
     ui.add_space(6.0);
 
     if ui.button("📋 Copy dependency licenses").clicked() {
-        ui.ctx().copy_text(licenses::dependency_licenses().to_owned());
+        ui.ctx()
+            .copy_text(licenses::dependency_licenses().to_owned());
     }
     ui.separator();
 
@@ -587,13 +604,16 @@ fn about_contents(ui: &mut egui::Ui, logo: Option<&egui::TextureHandle>) {
             // only the visible rows.
             let lines = licenses::dependency_license_lines();
             let row_h = ui.text_style_height(&egui::TextStyle::Monospace);
-            egui::ScrollArea::vertical()
-                .auto_shrink(false)
-                .show_rows(ui, row_h, lines.len(), |ui, range| {
+            egui::ScrollArea::vertical().auto_shrink(false).show_rows(
+                ui,
+                row_h,
+                lines.len(),
+                |ui, range| {
                     for line in &lines[range] {
                         ui.monospace(line);
                     }
-                });
+                },
+            );
         });
 }
 
@@ -604,7 +624,11 @@ mod tests {
         // The window icon and About-window logo both decode this; make sure the
         // committed asset stays a valid PNG.
         let icon = eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon-256.png"));
-        assert!(icon.is_ok(), "icon-256.png failed to decode: {:?}", icon.err());
+        assert!(
+            icon.is_ok(),
+            "icon-256.png failed to decode: {:?}",
+            icon.err()
+        );
         let icon = icon.unwrap();
         assert_eq!(icon.width, 256);
         assert_eq!(icon.height, 256);

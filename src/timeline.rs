@@ -69,7 +69,10 @@ pub fn show(
     for d in 0..days_visible {
         let date = view_start + Duration::days(d);
         let x = origin.x + LABEL_WIDTH + d as f32 * day_width;
-        let col = Rect::from_min_max(Pos2::new(x, plot_top), Pos2::new(x + day_width, plot_bottom));
+        let col = Rect::from_min_max(
+            Pos2::new(x, plot_top),
+            Pos2::new(x + day_width, plot_bottom),
+        );
 
         if matches!(date.weekday(), Weekday::Sat | Weekday::Sun) {
             painter.rect_filled(col, CornerRadius::ZERO, weekend_bg);
@@ -80,7 +83,13 @@ pub fn show(
         );
 
         // Label every day when zoomed in, otherwise thin it out to avoid clutter.
-        let label_every = if day_width >= 36.0 { 1 } else if day_width >= 18.0 { 2 } else { 7 };
+        let label_every = if day_width >= 36.0 {
+            1
+        } else if day_width >= 18.0 {
+            2
+        } else {
+            7
+        };
         if d % label_every == 0 {
             painter.text(
                 Pos2::new(x + 3.0, origin.y + HEADER_HEIGHT / 2.0),
@@ -108,7 +117,10 @@ pub fn show(
 
         // Horizontal separator.
         painter.line_segment(
-            [Pos2::new(origin.x, row_bottom), Pos2::new(plot_right, row_bottom)],
+            [
+                Pos2::new(origin.x, row_bottom),
+                Pos2::new(plot_right, row_bottom),
+            ],
             Stroke::new(1.0, grid_color),
         );
 
@@ -158,8 +170,16 @@ pub fn show(
 
         // Bars for every stay in this housing. Overlapping stays are packed
         // into stacked sub-lanes so no bar is ever hidden behind another.
-        let mut stays: Vec<&Stay> = plan.stays.iter().filter(|s| s.housing == housing.id).collect();
-        stays.sort_by(|a, b| a.arrival.cmp(&b.arrival).then(a.departure.cmp(&b.departure)));
+        let mut stays: Vec<&Stay> = plan
+            .stays
+            .iter()
+            .filter(|s| s.housing == housing.id)
+            .collect();
+        stays.sort_by(|a, b| {
+            a.arrival
+                .cmp(&b.arrival)
+                .then(a.departure.cmp(&b.departure))
+        });
 
         let intervals: Vec<(NaiveDate, NaiveDate)> =
             stays.iter().map(|s| (s.arrival, s.departure)).collect();
@@ -306,10 +326,7 @@ fn draw_conflict_hatch(painter: &egui::Painter, span: Rect) {
     let mut x = span.min.x - h;
     while x < span.max.x {
         p.line_segment(
-            [
-                Pos2::new(x, span.max.y),
-                Pos2::new(x + h, span.min.y),
-            ],
+            [Pos2::new(x, span.max.y), Pos2::new(x + h, span.min.y)],
             Stroke::new(1.5, line),
         );
         x += step;
