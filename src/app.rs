@@ -14,6 +14,8 @@ pub struct PlannerApp {
     view_start: NaiveDate,
     days_visible: i64,
     day_width: f32,
+    /// Sub-day remainder accumulated while drag-panning the timeline.
+    pan_remainder: f32,
     /// Transient status line (e.g. result of the last file save/load).
     status: String,
 }
@@ -36,6 +38,7 @@ impl PlannerApp {
             view_start,
             days_visible: 30,
             day_width: 26.0,
+            pan_remainder: 0.0,
             status: String::new(),
         }
     }
@@ -51,20 +54,43 @@ impl eframe::App for PlannerApp {
         self.side_panel(ui);
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
-            egui::ScrollArea::both().show(ui, |ui| {
-                timeline::show(
+            // Vertical scroll for many housings; horizontal movement is done by
+            // dragging the canvas (which pans the date window).
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                let response = timeline::show(
                     ui,
                     &self.plan,
                     self.view_start,
                     self.days_visible,
                     self.day_width,
                 );
+                self.handle_pan(ui, &response);
             });
         });
     }
 }
 
 impl PlannerApp {
+    /// Drag-to-pan: shift the visible date window as the canvas is dragged.
+    /// Dragging right reveals earlier dates (a "grab the content" gesture); a
+    /// fractional-day remainder is carried over so panning stays smooth.
+    fn handle_pan(&mut self, ui: &egui::Ui, response: &egui::Response) {
+        if response.dragged() && self.day_width > 0.0 {
+            self.pan_remainder += response.drag_delta().x / self.day_width;
+            let whole_days = self.pan_remainder.trunc();
+            if whole_days != 0.0 {
+                self.view_start -= Duration::days(whole_days as i64);
+                self.pan_remainder -= whole_days;
+            }
+            ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
+        } else {
+            self.pan_remainder = 0.0;
+            if response.hovered() {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
+            }
+        }
+    }
+
     fn top_bar(&mut self, ui: &mut egui::Ui) {
         egui::Panel::top("top").show_inside(ui, |ui| {
             ui.horizontal(|ui| {

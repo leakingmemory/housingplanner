@@ -14,9 +14,16 @@ const HEADER_HEIGHT: f32 = 28.0;
 const ROW_HEIGHT: f32 = 34.0;
 const BAR_PADDING: f32 = 5.0;
 
-/// Render the timeline into `ui`. The caller is responsible for wrapping this
-/// in a [`egui::ScrollArea`] so large plans can be panned.
-pub fn show(ui: &mut egui::Ui, plan: &Plan, view_start: NaiveDate, days_visible: i64, day_width: f32) {
+/// Render the timeline into `ui` and return the canvas [`egui::Response`] so the
+/// caller can implement drag-to-pan. The caller is responsible for wrapping this
+/// in a [`egui::ScrollArea`] when there are more housings than fit vertically.
+pub fn show(
+    ui: &mut egui::Ui,
+    plan: &Plan,
+    view_start: NaiveDate,
+    days_visible: i64,
+    day_width: f32,
+) -> egui::Response {
     let rows = plan.housings.len().max(1);
     let plot_width = days_visible as f32 * day_width;
     let total_size = Vec2::new(
@@ -24,7 +31,8 @@ pub fn show(ui: &mut egui::Ui, plan: &Plan, view_start: NaiveDate, days_visible:
         HEADER_HEIGHT + rows as f32 * ROW_HEIGHT,
     );
 
-    let (response, painter) = ui.allocate_painter(total_size, Sense::hover());
+    // `click_and_drag` so the canvas consumes horizontal drags for panning.
+    let (response, painter) = ui.allocate_painter(total_size, Sense::click_and_drag());
     let origin = response.rect.min;
     let today = chrono::Local::now().date_naive();
 
@@ -189,6 +197,8 @@ pub fn show(ui: &mut egui::Ui, plan: &Plan, view_start: NaiveDate, days_visible:
             visuals.weak_text_color(),
         );
     }
+
+    response
 }
 
 /// Pick black or white text depending on background luminance.
