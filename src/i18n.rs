@@ -13,6 +13,7 @@ pub enum Lang {
     Swedish,
     Norwegian,
     NorwegianNynorsk,
+    NorthernSami,
 }
 
 impl Default for Lang {
@@ -23,11 +24,12 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 4] = [
+    pub const ALL: [Lang; 5] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
         Lang::NorwegianNynorsk,
+        Lang::NorthernSami,
     ];
 
     /// Native name shown in the language picker.
@@ -37,6 +39,7 @@ impl Lang {
             Lang::Swedish => "Svenska",
             Lang::Norwegian => "Norsk bokmål",
             Lang::NorwegianNynorsk => "Norsk nynorsk",
+            Lang::NorthernSami => "Davvisámegiella",
         }
     }
 
@@ -53,6 +56,8 @@ impl Lang {
             Lang::NorwegianNynorsk
         } else if v.starts_with("nb") || v.starts_with("no") {
             Lang::Norwegian
+        } else if v.starts_with("se") {
+            Lang::NorthernSami
         } else {
             Lang::English
         }
@@ -66,6 +71,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::Swedish => sv(en),
         Lang::Norwegian => nb(en),
         Lang::NorwegianNynorsk => nn(en),
+        Lang::NorthernSami => se(en),
     }
 }
 
@@ -391,6 +397,118 @@ fn nn(en: &'static str) -> &'static str {
         "⚠ Also booked elsewhere at the same time" => "⚠ Også booka ein annan stad samstundes",
         "<deleted person>" => "<sletta person>",
         "<deleted group>" => "<sletta gruppe>",
+
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Northern Sami (davvisámegiella) translations, keyed by the English source
+/// string. Unknown strings fall back to English.
+///
+/// NOTE: best-effort translation — should be reviewed by a fluent speaker.
+fn se(en: &'static str) -> &'static str {
+    match en {
+        // Tabs
+        "📊 Overview" => "📊 Geahčastat",
+        "👥 Groups" => "👥 Joavkkut",
+        "🧍 Persons" => "🧍 Olbmot",
+        "🏠 Housings" => "🏠 Orrunsajit",
+
+        // Top bar
+        "From:" => "Rájes:",
+        "Days:" => "Beaivvit:",
+        "Zoom:" => "Zoom:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Dahje Ctrl/Cmd + rulle (njeaikkas touchpad) áigelinnjá badjel"
+        }
+        "Today" => "Odne",
+        "Fit to stays" => "Heivet orrumiidda",
+        "💾 Save…" => "💾 Vurke…",
+        "📂 Load…" => "📂 Raba…",
+        "ℹ About" => "ℹ Birra",
+        "Language" => "Giella",
+
+        // Status messages (used as prefixes before a path / error)
+        "Saved →" => "Vurkejuvvon →",
+        "Loaded ←" => "Viežžojuvvon ←",
+        "Save failed:" => "Ii sáhttán vurket:",
+        "Encode failed:" => "Ii sáhttán kodet:",
+        "Read failed:" => "Ii sáhttán lohkat:",
+        "Parse failed:" => "Ii sáhttán dulkot:",
+        "File save is not available on Android yet." => {
+            "Fiilavurken ii leat vel olamuttus Android:as."
+        }
+        "File load is not available on Android yet." => {
+            "Fiilaviežžan ii leat vel olamuttus Android:as."
+        }
+        "Housing Planner plan" => "Housing Planner-plána",
+
+        // About window
+        "About / Licenses" => "Birra / Liseanssat",
+        "Version" => "Veršuvdna",
+        "Plan who stays where, and when." => "Plánes gii orru gos, ja goas.",
+        "📋 Copy dependency licenses" => "📋 Máŋge sorjjasvuođaliseanssaid",
+        "This application" => "Dát prográmma",
+        "Third-party dependencies" => "Goalmmát beali sorjjasvuođat",
+
+        // Overview tab
+        "Welcome to Housing Planner" => "Bures boahtin Housing Planner:ii",
+        "Add housings, groups and people in the tabs above —" => {
+            "Lasit orrunsajiid, joavkkuid ja olbmuid bajábeale gilkoriin —"
+        }
+        "📋 Load example data" => "📋 Viečča ovdamearkadáhtaid",
+        "Add a housing in the Housings tab to start planning." => {
+            "Lasit orrunsaji Orrunsajit-gilkoris vai sáhtát álgit plánet."
+        }
+
+        // Selectors / common
+        "Group" => "Joavku",
+        "Person" => "Olmmoš",
+        "Housing" => "Orrunsadji",
+        "➕ New" => "➕ Ođas",
+        "Stays:" => "Orrumat:",
+        "Stays (individual):" => "Orrumat (ovttaskas):",
+        "➕ Add stay" => "➕ Lasit orruma",
+        "Add a housing and a person/group first." => "Lasit vuos orrunsaji ja olbmo/joavkku.",
+        "(no stays)" => "(eai orrumat)",
+        "(group)" => "(joavku)",
+
+        // Groups tab
+        "No groups yet — add one." => "Eai joavkkut velá — lasit ovtta.",
+        "🗑 Delete group" => "🗑 Sihko joavkku",
+        "Members:" => "Lahtut:",
+        "(no members)" => "(eai lahtut)",
+        "➕ Add existing…" => "➕ Lasit dálá…",
+        "➕ New person" => "➕ Ođđa olmmoš",
+        "Select or create a group." => "Vállje dahje ráhkat joavkku.",
+        "No stays for this group yet." => "Eai orrumat dán joavkkus velá.",
+
+        // Persons tab
+        "No persons yet — add one." => "Eai olbmot velá — lasit ovtta.",
+        "— no group —" => "— ii joavku —",
+        "🗑 Delete person" => "🗑 Sihko olbmo",
+        "Select or create a person." => "Vállje dahje ráhkat olbmo.",
+        "No stays for this person yet." => "Eai orrumat dán olbmui velá.",
+
+        // Housings tab
+        "No housings yet — add one." => "Eai orrunsajit velá — lasit ovtta.",
+        "Capacity" => "Kapasitehta",
+        "Notes:" => "Mearkkašumit:",
+        "🗑 Delete housing" => "🗑 Sihko orrunsaji",
+        "Select or create a housing." => "Vállje dahje ráhkat orrunsaji.",
+        "No stays in this housing yet." => "Eai orrumat dán orrunsajis velá.",
+
+        // Timeline
+        "cap" => "kap",
+        "To:" => "Gitta:",
+        "Nights:" => "Ijat:",
+        "People:" => "Olbmot:",
+        "⚠ Also booked elsewhere at the same time" => {
+            "⚠ Maiddái diŋgojuvvon eará sajis seamma áigge"
+        }
+        "<deleted person>" => "<sihkkojuvvon olmmoš>",
+        "<deleted group>" => "<sihkkojuvvon joavku>",
 
         // Fallback: English
         other => other,
