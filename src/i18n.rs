@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 pub enum Lang {
     English,
     Swedish,
+    Norwegian,
 }
 
 impl Default for Lang {
@@ -21,13 +22,14 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 2] = [Lang::English, Lang::Swedish];
+    pub const ALL: [Lang; 3] = [Lang::English, Lang::Swedish, Lang::Norwegian];
 
     /// Native name shown in the language picker.
     pub fn label(self) -> &'static str {
         match self {
             Lang::English => "English",
             Lang::Swedish => "Svenska",
+            Lang::Norwegian => "Norsk bokmål",
         }
     }
 
@@ -40,6 +42,8 @@ impl Lang {
             .to_ascii_lowercase();
         if v.starts_with("sv") {
             Lang::Swedish
+        } else if v.starts_with("nb") || v.starts_with("no") || v.starts_with("nn") {
+            Lang::Norwegian
         } else {
             Lang::English
         }
@@ -51,6 +55,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
     match lang {
         Lang::English => en,
         Lang::Swedish => sv(en),
+        Lang::Norwegian => nb(en),
     }
 }
 
@@ -158,6 +163,114 @@ fn sv(en: &'static str) -> &'static str {
         "⚠ Also booked elsewhere at the same time" => "⚠ Även bokad någon annanstans samtidigt",
         "<deleted person>" => "<borttagen person>",
         "<deleted group>" => "<borttagen grupp>",
+
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Norwegian Bokmål translations, keyed by the English source string. Unknown
+/// strings fall back to English.
+fn nb(en: &'static str) -> &'static str {
+    match en {
+        // Tabs
+        "📊 Overview" => "📊 Oversikt",
+        "👥 Groups" => "👥 Grupper",
+        "🧍 Persons" => "🧍 Personer",
+        "🏠 Housings" => "🏠 Boliger",
+
+        // Top bar
+        "From:" => "Fra:",
+        "Days:" => "Dager:",
+        "Zoom:" => "Zoom:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Eller Ctrl/Cmd + rull (knip på styreplate) over tidslinjen"
+        }
+        "Today" => "I dag",
+        "Fit to stays" => "Tilpass til opphold",
+        "💾 Save…" => "💾 Lagre…",
+        "📂 Load…" => "📂 Åpne…",
+        "ℹ About" => "ℹ Om",
+        "Language" => "Språk",
+
+        // Status messages (used as prefixes before a path / error)
+        "Saved →" => "Lagret →",
+        "Loaded ←" => "Åpnet ←",
+        "Save failed:" => "Kunne ikke lagre:",
+        "Encode failed:" => "Kunne ikke kode:",
+        "Read failed:" => "Kunne ikke lese:",
+        "Parse failed:" => "Kunne ikke tolke:",
+        "File save is not available on Android yet." => {
+            "Fillagring er ikke tilgjengelig på Android ennå."
+        }
+        "File load is not available on Android yet." => {
+            "Filåpning er ikke tilgjengelig på Android ennå."
+        }
+        "Housing Planner plan" => "Housing Planner-plan",
+
+        // About window
+        "About / Licenses" => "Om / Lisenser",
+        "Version" => "Versjon",
+        "Plan who stays where, and when." => "Planlegg hvem som bor hvor, og når.",
+        "📋 Copy dependency licenses" => "📋 Kopier avhengighetslisenser",
+        "This application" => "Denne applikasjonen",
+        "Third-party dependencies" => "Tredjepartsavhengigheter",
+
+        // Overview tab
+        "Welcome to Housing Planner" => "Velkommen til Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Legg til boliger, grupper og personer i fanene over —"
+        }
+        "📋 Load example data" => "📋 Last inn eksempeldata",
+        "Add a housing in the Housings tab to start planning." => {
+            "Legg til en bolig i fanen Boliger for å begynne å planlegge."
+        }
+
+        // Selectors / common
+        "Group" => "Gruppe",
+        "Person" => "Person",
+        "Housing" => "Bolig",
+        "➕ New" => "➕ Ny",
+        "Stays:" => "Opphold:",
+        "Stays (individual):" => "Opphold (individuelle):",
+        "➕ Add stay" => "➕ Legg til opphold",
+        "Add a housing and a person/group first." => "Legg til en bolig og en person/gruppe først.",
+        "(no stays)" => "(ingen opphold)",
+        "(group)" => "(gruppe)",
+
+        // Groups tab
+        "No groups yet — add one." => "Ingen grupper ennå — legg til en.",
+        "🗑 Delete group" => "🗑 Slett gruppe",
+        "Members:" => "Medlemmer:",
+        "(no members)" => "(ingen medlemmer)",
+        "➕ Add existing…" => "➕ Legg til eksisterende…",
+        "➕ New person" => "➕ Ny person",
+        "Select or create a group." => "Velg eller opprett en gruppe.",
+        "No stays for this group yet." => "Ingen opphold for denne gruppen ennå.",
+
+        // Persons tab
+        "No persons yet — add one." => "Ingen personer ennå — legg til en.",
+        "— no group —" => "— ingen gruppe —",
+        "🗑 Delete person" => "🗑 Slett person",
+        "Select or create a person." => "Velg eller opprett en person.",
+        "No stays for this person yet." => "Ingen opphold for denne personen ennå.",
+
+        // Housings tab
+        "No housings yet — add one." => "Ingen boliger ennå — legg til en.",
+        "Capacity" => "Kapasitet",
+        "Notes:" => "Notater:",
+        "🗑 Delete housing" => "🗑 Slett bolig",
+        "Select or create a housing." => "Velg eller opprett en bolig.",
+        "No stays in this housing yet." => "Ingen opphold i denne boligen ennå.",
+
+        // Timeline
+        "cap" => "kap",
+        "To:" => "Til:",
+        "Nights:" => "Netter:",
+        "People:" => "Personer:",
+        "⚠ Also booked elsewhere at the same time" => "⚠ Også booket et annet sted samtidig",
+        "<deleted person>" => "<slettet person>",
+        "<deleted group>" => "<slettet gruppe>",
 
         // Fallback: English
         other => other,
