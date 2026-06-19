@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Housing Planner
+Comment=Plan who stays where, and when
+Exec=housingplanner
+Icon=${SNAP}/meta/gui/icon.png
+Terminal=false
+Type=Application
+Categories=Office;ProjectManagement;

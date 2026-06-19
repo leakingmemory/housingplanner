@@ -1,0 +1,51 @@
+name: housingplanner
+base: core22
+version: '0.1.0'
+license: MIT
+title: Housing Planner
+summary: Plan who stays where, and when
+description: |
+  Housing Planner visualizes who can stay where over time — people, groups,
+  housings and their arrival/departure dates — on a colored timeline, making
+  overlaps, capacity and double-bookings easy to see. Originally built for
+  planning housing around a volunteer building project.
+
+contact:
+  - sigsegv@radiotube.org
+
+issues:
+  - https://github.com/leakingmemory/housingplanner/issues
+website:
+  - https://github.com/leakingmemory/housingplanner
+source-code:
+  - https://github.com/leakingmemory/housingplanner.git
+
+grade: stable
+confinement: strict
+
+apps:
+  housingplanner:
+    command: bin/housingplanner
+    # The gnome extension supplies Wayland/X11, Mesa/OpenGL, fonts, themes and
+    # the desktop portal (used by the Save/Load file dialogs).
+    extensions: [gnome]
+    plugs:
+      - home
+      - removable-media
+
+parts:
+  housingplanner:
+    plugin: rust
+    source: .
+    rust-channel: "stable"
+    # Link-time deps for winit/egui; the gnome platform provides the runtime libs.
+    build-packages:
+      - libxkbcommon-dev
+      - libwayland-dev
+      - libx11-dev
+      - libxcursor-dev
+      - libxi-dev
+      - libxrandr-dev
+      - libgl1-mesa-dev
+      - libfontconfig1-dev
+      - pkg-config

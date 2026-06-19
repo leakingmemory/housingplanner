@@ -45,6 +45,28 @@ dependency). Loading replaces the current plan.
 cargo run --release
 ```
 
+## Install (Snap, Linux)
+
+Released to the Snap Store's edge channel:
+
+```sh
+sudo snap install housingplanner --edge
+```
+
+Build the snap locally (needs `snapcraft` + LXD):
+
+```sh
+snapcraft --use-lxd
+sudo snap install ./housingplanner_*.snap --dangerous
+```
+
+The snap is a strictly-confined desktop app (uses the `gnome` extension for
+graphics/fonts and the `home` interface for the Save/Load dialogs). Publishing to
+the store is done by the `snapcraft.yml` workflow when a `v*` tag is pushed; that
+requires the `housingplanner` name registered in the store and a `SNAPCRAFT_LOGIN`
+repository secret. The snap version in `snap/snapcraft.yaml` is kept in sync with
+`Cargo.toml` (enforced by `check-versions.yml`).
+
 ### Top bar controls
 - **From** — first date shown.
 - **Days** — how many days are visible.
