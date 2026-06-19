@@ -2,9 +2,20 @@
 
 use chrono::{Datelike, Duration, NaiveDate};
 
+use std::collections::HashSet;
+
 use crate::licenses;
 use crate::model::{Group, Housing, Id, Person, Plan, Stay, Subject, GROUP_PALETTE};
 use crate::timeline;
+
+/// The active workspace tab.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Tab {
+    Overview,
+    Groups,
+    Persons,
+    Housings,
+}
 
 /// Storage key used for `eframe`'s built-in cross-platform persistence.
 /// Kept as the original value so plans saved before the project rename still
@@ -32,6 +43,11 @@ pub struct PlannerApp {
     licenses_open: bool,
     /// App logo texture, shown in the About window.
     logo: Option<egui::TextureHandle>,
+    // --- Tab navigation + per-tab selection (not persisted) ---
+    active_tab: Tab,
+    selected_group: Option<Id>,
+    selected_person: Option<Id>,
+    selected_housing: Option<Id>,
 }
 
 impl PlannerApp {
@@ -70,6 +86,10 @@ impl PlannerApp {
             status: String::new(),
             licenses_open: false,
             logo,
+            active_tab: Tab::Overview,
+            selected_group: None,
+            selected_person: None,
+            selected_housing: None,
         }
     }
 }
@@ -82,23 +102,22 @@ impl eframe::App for PlannerApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.top_bar(ui);
         self.licenses_window(ui.ctx());
-        self.side_panel(ui);
 
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            // Vertical scroll for many housings; horizontal movement is done by
-            // dragging the canvas (which pans the date window).
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                let response = timeline::show(
-                    ui,
-                    &self.plan,
-                    self.view_start,
-                    self.days_visible,
-                    self.day_width,
-                );
-                self.handle_zoom(ui, &response);
-                self.handle_pan(ui, &response);
+        egui::Panel::top("tabs").show_inside(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut self.active_tab, Tab::Overview, "📊 Overview");
+                ui.selectable_value(&mut self.active_tab, Tab::Groups, "👥 Groups");
+                ui.selectable_value(&mut self.active_tab, Tab::Persons, "🧍 Persons");
+                ui.selectable_value(&mut self.active_tab, Tab::Housings, "🏠 Housings");
             });
         });
+
+        match self.active_tab {
+            Tab::Overview => self.overview_tab(ui),
+            Tab::Groups => self.groups_tab(ui),
+            Tab::Persons => self.persons_tab(ui),
+            Tab::Housings => self.housings_tab(ui),
+        }
     }
 }
 
@@ -107,7 +126,9 @@ impl PlannerApp {
     /// date under the pointer so it stays put. egui zeroes the scroll delta when
     /// the zoom modifier is held, so the surrounding scroll area doesn't move.
     fn handle_zoom(&mut self, ui: &egui::Ui, response: &egui::Response) {
-        if !response.hovered() {
+        // contains_pointer (not hovered) so zoom keeps working when the pointer
+        // is over a bar's hover-tooltip region, which sits on top of the canvas.
+        if !response.contains_pointer() {
             return;
         }
         let zoom = ui.ctx().input(|i| i.zoom_delta());
@@ -122,8 +143,9 @@ impl PlannerApp {
         }
 
         // Keep the date under the pointer fixed (fall back to the left edge).
+        // Use the context pointer pos so it's correct even over a bar region.
         let plot_left = response.rect.min.x + timeline::LABEL_WIDTH;
-        let pointer_x = response.hover_pos().map_or(plot_left, |p| p.x);
+        let pointer_x = ui.ctx().pointer_hover_pos().map_or(plot_left, |p| p.x);
         let anchor_px = (pointer_x - plot_left).max(0.0);
 
         // view_start shifts by the change in days spanned up to the anchor.
@@ -150,7 +172,7 @@ impl PlannerApp {
             ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
         } else {
             self.pan_remainder = 0.0;
-            if response.hovered() {
+            if response.contains_pointer() {
                 ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
             }
         }
@@ -283,256 +305,371 @@ impl PlannerApp {
         self.status = "File load is not available on Android yet.".to_owned();
     }
 
-    fn side_panel(&mut self, ui: &mut egui::Ui) {
-        egui::Panel::left("manage")
-            .resizable(true)
-            .default_size(320.0)
-            .show_inside(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    let plan = &mut self.plan;
+    /// Central timeline for the active tab: render the filtered timeline, then
+    /// apply the shared zoom/pan handlers to the returned response.
+    fn timeline_panel(
+        &mut self,
+        ui: &mut egui::Ui,
+        housings: &[Id],
+        include: &dyn Fn(&Stay) -> bool,
+        empty_hint: &str,
+    ) {
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                let filter = timeline::Filter {
+                    housings,
+                    include,
+                    empty_hint,
+                };
+                let response = timeline::show(
+                    ui,
+                    &self.plan,
+                    self.view_start,
+                    self.days_visible,
+                    self.day_width,
+                    &filter,
+                );
+                self.handle_zoom(ui, &response);
+                self.handle_pan(ui, &response);
+            });
+        });
+    }
 
-                    if plan.is_empty() && ui.button("📋 Load example data").clicked() {
-                        plan.load_sample();
+    fn overview_tab(&mut self, ui: &mut egui::Ui) {
+        if self.plan.is_empty() {
+            egui::CentralPanel::default().show_inside(ui, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(40.0);
+                    ui.heading("Welcome to Housing Planner");
+                    ui.label("Add housings, groups and people in the tabs above —");
+                    ui.add_space(6.0);
+                    if ui.button("📋 Load example data").clicked() {
+                        self.plan.load_sample();
                     }
-
-                    egui::CollapsingHeader::new("🏠 Housings")
-                        .default_open(true)
-                        .show(ui, |ui| housings_ui(ui, plan));
-
-                    egui::CollapsingHeader::new("👥 Groups")
-                        .default_open(true)
-                        .show(ui, |ui| groups_ui(ui, plan));
-
-                    egui::CollapsingHeader::new("🧍 Persons")
-                        .default_open(true)
-                        .show(ui, |ui| persons_ui(ui, plan));
-
-                    egui::CollapsingHeader::new("📅 Stays")
-                        .default_open(true)
-                        .show(ui, |ui| stays_ui(ui, plan));
                 });
             });
+            return;
+        }
+        let housings: Vec<Id> = self.plan.housings.iter().map(|h| h.id).collect();
+        self.timeline_panel(
+            ui,
+            &housings,
+            &|_| true,
+            "Add a housing in the Housings tab to start planning.",
+        );
     }
-}
 
-fn housings_ui(ui: &mut egui::Ui, plan: &mut Plan) {
-    let mut delete: Option<Id> = None;
-    for housing in &mut plan.housings {
-        ui.push_id(housing.id, |ui| {
-            ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut housing.name).desired_width(140.0));
-                ui.label("cap");
-                ui.add(egui::DragValue::new(&mut housing.capacity).range(0..=999));
-                if ui.button("🗑").clicked() {
-                    delete = Some(housing.id);
-                }
+    fn groups_tab(&mut self, ui: &mut egui::Ui) {
+        egui::Panel::left("groups_panel")
+            .resizable(true)
+            .default_size(340.0)
+            .show_inside(ui, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| self.groups_editor(ui));
             });
-        });
-    }
-    if let Some(id) = delete {
-        plan.housings.retain(|h| h.id != id);
-        plan.stays.retain(|s| s.housing != id);
-    }
-    if ui.button("➕ Add housing").clicked() {
-        let id = plan.new_id();
-        plan.housings.push(Housing {
-            id,
-            name: format!("Housing {}", plan.housings.len() + 1),
-            capacity: 2,
-            notes: String::new(),
-        });
-    }
-}
 
-fn groups_ui(ui: &mut egui::Ui, plan: &mut Plan) {
-    let mut delete: Option<Id> = None;
-    for group in &mut plan.groups {
-        ui.push_id(group.id, |ui| {
+        if let Some(gid) = self.selected_group {
+            let housings: Vec<Id> = self
+                .plan
+                .housings
+                .iter()
+                .filter(|h| {
+                    self.plan
+                        .stays
+                        .iter()
+                        .any(|s| s.housing == h.id && s.subject == Subject::Group(gid))
+                })
+                .map(|h| h.id)
+                .collect();
+            let include = move |s: &Stay| s.subject == Subject::Group(gid);
+            self.timeline_panel(ui, &housings, &include, "No stays for this group yet.");
+        } else {
+            egui::CentralPanel::default()
+                .show_inside(ui, |ui| centered_hint(ui, "Select or create a group."));
+        }
+    }
+
+    fn persons_tab(&mut self, ui: &mut egui::Ui) {
+        egui::Panel::left("persons_panel")
+            .resizable(true)
+            .default_size(340.0)
+            .show_inside(ui, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| self.persons_editor(ui));
+            });
+
+        if let Some(pid) = self.selected_person {
+            // Own stays plus stays of any group the person belongs to.
+            let included: HashSet<Id> = self
+                .plan
+                .stays
+                .iter()
+                .filter(|s| self.plan.stay_includes_person(s, pid))
+                .map(|s| s.id)
+                .collect();
+            let housings: Vec<Id> = self
+                .plan
+                .housings
+                .iter()
+                .filter(|h| {
+                    self.plan
+                        .stays
+                        .iter()
+                        .any(|s| s.housing == h.id && included.contains(&s.id))
+                })
+                .map(|h| h.id)
+                .collect();
+            let include = move |s: &Stay| included.contains(&s.id);
+            self.timeline_panel(ui, &housings, &include, "No stays for this person yet.");
+        } else {
+            egui::CentralPanel::default()
+                .show_inside(ui, |ui| centered_hint(ui, "Select or create a person."));
+        }
+    }
+
+    fn housings_tab(&mut self, ui: &mut egui::Ui) {
+        egui::Panel::left("housings_panel")
+            .resizable(true)
+            .default_size(340.0)
+            .show_inside(ui, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| self.housings_editor(ui));
+            });
+
+        if let Some(hid) = self.selected_housing {
+            let housings = [hid];
+            self.timeline_panel(ui, &housings, &|_| true, "No stays in this housing yet.");
+        } else {
+            egui::CentralPanel::default()
+                .show_inside(ui, |ui| centered_hint(ui, "Select or create a housing."));
+        }
+    }
+
+    fn groups_editor(&mut self, ui: &mut egui::Ui) {
+        let Self {
+            plan,
+            selected_group: selected,
+            ..
+        } = self;
+
+        let items: Vec<(Id, String)> =
+            plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
+        let ids: Vec<Id> = items.iter().map(|(i, _)| *i).collect();
+        ensure_selection(selected, &ids);
+
+        ui.horizontal(|ui| {
+            entity_selector(ui, "Group", selected, &items);
+            if ui.button("➕ New").clicked() {
+                let id = plan.new_id();
+                let color = GROUP_PALETTE[plan.groups.len() % GROUP_PALETTE.len()];
+                plan.groups.push(Group {
+                    id,
+                    name: format!("Group {}", plan.groups.len() + 1),
+                    color,
+                });
+                *selected = Some(id);
+            }
+        });
+
+        let Some(gid) = *selected else {
+            ui.label("No groups yet — add one.");
+            return;
+        };
+        ui.separator();
+
+        if let Some(group) = plan.groups.iter_mut().find(|g| g.id == gid) {
             ui.horizontal(|ui| {
                 ui.color_edit_button_srgb(&mut group.color);
-                ui.add(egui::TextEdit::singleline(&mut group.name).desired_width(170.0));
-                if ui.button("🗑").clicked() {
-                    delete = Some(group.id);
-                }
+                ui.add(egui::TextEdit::singleline(&mut group.name).desired_width(200.0));
             });
-        });
-    }
-    if let Some(id) = delete {
-        plan.groups.retain(|g| g.id != id);
-        // Detach members and drop group stays.
-        for p in &mut plan.persons {
-            if p.group == Some(id) {
+        }
+        if ui.button("🗑 Delete group").clicked() {
+            plan.groups.retain(|g| g.id != gid);
+            for p in &mut plan.persons {
+                if p.group == Some(gid) {
+                    p.group = None;
+                }
+            }
+            plan.stays.retain(|s| s.subject != Subject::Group(gid));
+            *selected = None;
+            return;
+        }
+
+        ui.separator();
+        ui.label("Members:");
+        let members: Vec<(Id, String)> = plan
+            .persons
+            .iter()
+            .filter(|p| p.group == Some(gid))
+            .map(|p| (p.id, p.name.clone()))
+            .collect();
+        let mut detach: Option<Id> = None;
+        for (pid, name) in &members {
+            ui.horizontal(|ui| {
+                if ui.small_button("✕").clicked() {
+                    detach = Some(*pid);
+                }
+                ui.label(name);
+            });
+        }
+        if members.is_empty() {
+            ui.label(egui::RichText::new("(no members)").weak().small());
+        }
+        if let Some(pid) = detach {
+            if let Some(p) = plan.persons.iter_mut().find(|p| p.id == pid) {
                 p.group = None;
             }
         }
-        plan.stays.retain(|s| s.subject != Subject::Group(id));
-    }
-    if ui.button("➕ Add group").clicked() {
-        let id = plan.new_id();
-        let color = GROUP_PALETTE[plan.groups.len() % GROUP_PALETTE.len()];
-        plan.groups.push(Group {
-            id,
-            name: format!("Group {}", plan.groups.len() + 1),
-            color,
-        });
-    }
-}
-
-fn persons_ui(ui: &mut egui::Ui, plan: &mut Plan) {
-    // Snapshot groups for the combo box so we can mutate persons freely.
-    let groups: Vec<(Id, String)> = plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
-
-    let mut delete: Option<Id> = None;
-    for person in &mut plan.persons {
-        ui.push_id(person.id, |ui| {
-            ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut person.name).desired_width(130.0));
-
-                let current = person
-                    .group
-                    .and_then(|gid| groups.iter().find(|(id, _)| *id == gid))
-                    .map(|(_, name)| name.as_str())
-                    .unwrap_or("— no group —");
-                egui::ComboBox::from_id_salt("grp")
-                    .selected_text(current)
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut person.group, None, "— no group —");
-                        for (gid, name) in &groups {
-                            ui.selectable_value(&mut person.group, Some(*gid), name);
+        ui.horizontal(|ui| {
+            let mut attach: Option<Id> = None;
+            egui::ComboBox::from_id_salt("add_member")
+                .selected_text("➕ Add existing…")
+                .show_ui(ui, |ui| {
+                    for p in plan.persons.iter().filter(|p| p.group != Some(gid)) {
+                        if ui.selectable_label(false, p.name.as_str()).clicked() {
+                            attach = Some(p.id);
                         }
-                    });
-
-                if ui.button("🗑").clicked() {
-                    delete = Some(person.id);
+                    }
+                });
+            if let Some(pid) = attach {
+                if let Some(p) = plan.persons.iter_mut().find(|p| p.id == pid) {
+                    p.group = Some(gid);
                 }
+            }
+            if ui.button("➕ New person").clicked() {
+                let id = plan.new_id();
+                plan.persons.push(Person {
+                    id,
+                    name: format!("Person {}", plan.persons.len() + 1),
+                    group: Some(gid),
+                });
+            }
+        });
+
+        ui.separator();
+        ui.label("Stays:");
+        stay_editor(ui, plan, |s| s.subject == Subject::Group(gid), false, true);
+        add_stay_button(ui, plan, Some(Subject::Group(gid)), None);
+    }
+
+    fn persons_editor(&mut self, ui: &mut egui::Ui) {
+        let Self {
+            plan,
+            selected_person: selected,
+            ..
+        } = self;
+
+        let items: Vec<(Id, String)> =
+            plan.persons.iter().map(|p| (p.id, p.name.clone())).collect();
+        let ids: Vec<Id> = items.iter().map(|(i, _)| *i).collect();
+        ensure_selection(selected, &ids);
+
+        ui.horizontal(|ui| {
+            entity_selector(ui, "Person", selected, &items);
+            if ui.button("➕ New").clicked() {
+                let id = plan.new_id();
+                plan.persons.push(Person {
+                    id,
+                    name: format!("Person {}", plan.persons.len() + 1),
+                    group: None,
+                });
+                *selected = Some(id);
+            }
+        });
+
+        let Some(pid) = *selected else {
+            ui.label("No persons yet — add one.");
+            return;
+        };
+        ui.separator();
+
+        let groups: Vec<(Id, String)> =
+            plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
+        if let Some(person) = plan.persons.iter_mut().find(|p| p.id == pid) {
+            ui.add(egui::TextEdit::singleline(&mut person.name).desired_width(200.0));
+            let current = person
+                .group
+                .and_then(|gid| groups.iter().find(|(i, _)| *i == gid))
+                .map(|(_, n)| n.as_str())
+                .unwrap_or("— no group —");
+            egui::ComboBox::from_label("Group")
+                .selected_text(current)
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut person.group, None, "— no group —");
+                    for (gid, name) in &groups {
+                        ui.selectable_value(&mut person.group, Some(*gid), name);
+                    }
+                });
+        }
+        if ui.button("🗑 Delete person").clicked() {
+            plan.persons.retain(|p| p.id != pid);
+            plan.stays.retain(|s| s.subject != Subject::Person(pid));
+            *selected = None;
+            return;
+        }
+
+        ui.separator();
+        ui.label("Stays (individual):");
+        stay_editor(ui, plan, |s| s.subject == Subject::Person(pid), false, true);
+        add_stay_button(ui, plan, Some(Subject::Person(pid)), None);
+    }
+
+    fn housings_editor(&mut self, ui: &mut egui::Ui) {
+        let Self {
+            plan,
+            selected_housing: selected,
+            ..
+        } = self;
+
+        let items: Vec<(Id, String)> =
+            plan.housings.iter().map(|h| (h.id, h.name.clone())).collect();
+        let ids: Vec<Id> = items.iter().map(|(i, _)| *i).collect();
+        ensure_selection(selected, &ids);
+
+        ui.horizontal(|ui| {
+            entity_selector(ui, "Housing", selected, &items);
+            if ui.button("➕ New").clicked() {
+                let id = plan.new_id();
+                plan.housings.push(Housing {
+                    id,
+                    name: format!("Housing {}", plan.housings.len() + 1),
+                    capacity: 2,
+                    notes: String::new(),
+                });
+                *selected = Some(id);
+            }
+        });
+
+        let Some(hid) = *selected else {
+            ui.label("No housings yet — add one.");
+            return;
+        };
+        ui.separator();
+
+        if let Some(h) = plan.housings.iter_mut().find(|h| h.id == hid) {
+            ui.add(egui::TextEdit::singleline(&mut h.name).desired_width(200.0));
+            ui.horizontal(|ui| {
+                ui.label("Capacity");
+                ui.add(egui::DragValue::new(&mut h.capacity).range(0..=999));
             });
-        });
-    }
-    if let Some(id) = delete {
-        plan.persons.retain(|p| p.id != id);
-        plan.stays.retain(|s| s.subject != Subject::Person(id));
-    }
-    if ui.button("➕ Add person").clicked() {
-        let id = plan.new_id();
-        plan.persons.push(Person {
-            id,
-            name: format!("Person {}", plan.persons.len() + 1),
-            group: None,
-        });
+            ui.label("Notes:");
+            ui.add(
+                egui::TextEdit::multiline(&mut h.notes)
+                    .desired_rows(2)
+                    .desired_width(220.0),
+            );
+        }
+        if ui.button("🗑 Delete housing").clicked() {
+            plan.housings.retain(|h| h.id != hid);
+            plan.stays.retain(|s| s.housing != hid);
+            *selected = None;
+            return;
+        }
+
+        ui.separator();
+        ui.label("Stays:");
+        stay_editor(ui, plan, |s| s.housing == hid, true, false);
+        add_stay_button(ui, plan, None, Some(hid));
     }
 }
 
-fn stays_ui(ui: &mut egui::Ui, plan: &mut Plan) {
-    // Snapshots for the combo boxes.
-    let housings: Vec<(Id, String)> = plan
-        .housings
-        .iter()
-        .map(|h| (h.id, h.name.clone()))
-        .collect();
-    let persons: Vec<(Id, String)> = plan
-        .persons
-        .iter()
-        .map(|p| (p.id, p.name.clone()))
-        .collect();
-    let groups: Vec<(Id, String)> = plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
-
-    let subject_label = |s: Subject| -> String {
-        match s {
-            Subject::Person(id) => persons
-                .iter()
-                .find(|(i, _)| *i == id)
-                .map(|(_, n)| n.clone())
-                .unwrap_or_else(|| "<person>".into()),
-            Subject::Group(id) => groups
-                .iter()
-                .find(|(i, _)| *i == id)
-                .map(|(_, n)| format!("{} (group)", n))
-                .unwrap_or_else(|| "<group>".into()),
-        }
-    };
-    let housing_label = |id: Id| -> String {
-        housings
-            .iter()
-            .find(|(i, _)| *i == id)
-            .map(|(_, n)| n.clone())
-            .unwrap_or_else(|| "<housing>".into())
-    };
-
-    let mut delete: Option<Id> = None;
-    for stay in &mut plan.stays {
-        ui.push_id(stay.id, |ui| {
-            ui.group(|ui| {
-                ui.horizontal(|ui| {
-                    egui::ComboBox::from_id_salt("subj")
-                        .selected_text(subject_label(stay.subject))
-                        .show_ui(ui, |ui| {
-                            for (id, name) in &persons {
-                                ui.selectable_value(&mut stay.subject, Subject::Person(*id), name);
-                            }
-                            for (id, name) in &groups {
-                                ui.selectable_value(
-                                    &mut stay.subject,
-                                    Subject::Group(*id),
-                                    format!("{} (group)", name),
-                                );
-                            }
-                        });
-                    ui.label("→");
-                    egui::ComboBox::from_id_salt("house")
-                        .selected_text(housing_label(stay.housing))
-                        .show_ui(ui, |ui| {
-                            for (id, name) in &housings {
-                                ui.selectable_value(&mut stay.housing, *id, name);
-                            }
-                        });
-                    if ui.button("🗑").clicked() {
-                        delete = Some(stay.id);
-                    }
-                });
-                ui.horizontal(|ui| {
-                    date_edit(ui, &mut stay.arrival);
-                    ui.label("→");
-                    date_edit(ui, &mut stay.departure);
-                    // Keep the range sane.
-                    if stay.departure < stay.arrival {
-                        stay.departure = stay.arrival;
-                    }
-                });
-            });
-        });
-    }
-    if let Some(id) = delete {
-        plan.stays.retain(|s| s.id != id);
-    }
-
-    // Adding a stay needs at least one housing and one subject.
-    let default_subject = persons
-        .first()
-        .map(|(id, _)| Subject::Person(*id))
-        .or_else(|| groups.first().map(|(id, _)| Subject::Group(*id)));
-    let can_add = !housings.is_empty() && default_subject.is_some();
-
-    ui.add_enabled_ui(can_add, |ui| {
-        if ui.button("➕ Add stay").clicked() {
-            let id = plan.new_id();
-            let today = chrono::Local::now().date_naive();
-            plan.stays.push(Stay {
-                id,
-                subject: default_subject.unwrap(),
-                housing: housings[0].0,
-                arrival: today,
-                departure: today + Duration::days(7),
-            });
-        }
-    });
-    if !can_add {
-        ui.label(
-            egui::RichText::new("Add a housing and a person/group first.")
-                .small()
-                .weak(),
-        );
-    }
-}
 
 /// Compact year / month / day editor for a [`NaiveDate`].
 ///
@@ -632,5 +769,172 @@ mod tests {
         let icon = icon.unwrap();
         assert_eq!(icon.width, 256);
         assert_eq!(icon.height, 256);
+    }
+}
+
+/// Ensure `sel` points at an existing id: clear it if the target is gone, then
+/// default to the first available id.
+fn ensure_selection(sel: &mut Option<Id>, ids: &[Id]) {
+    if let Some(id) = *sel {
+        if !ids.contains(&id) {
+            *sel = None;
+        }
+    }
+    if sel.is_none() {
+        *sel = ids.first().copied();
+    }
+}
+
+/// A labelled combo box for picking one entity by id.
+fn entity_selector(ui: &mut egui::Ui, label: &str, sel: &mut Option<Id>, items: &[(Id, String)]) {
+    let current = sel
+        .and_then(|id| items.iter().find(|(i, _)| *i == id))
+        .map(|(_, n)| n.as_str())
+        .unwrap_or("—");
+    egui::ComboBox::from_label(label)
+        .selected_text(current)
+        .show_ui(ui, |ui| {
+            for (id, name) in items {
+                ui.selectable_value(sel, Some(*id), name);
+            }
+        });
+}
+
+/// Centered, dimmed placeholder text for an empty central panel.
+fn centered_hint(ui: &mut egui::Ui, text: &str) {
+    ui.vertical_centered(|ui| {
+        ui.add_space(40.0);
+        ui.label(egui::RichText::new(text).weak());
+    });
+}
+
+/// First person, else first group — used as the default subject for a new stay.
+fn default_subject(plan: &Plan) -> Option<Subject> {
+    plan.persons
+        .first()
+        .map(|p| Subject::Person(p.id))
+        .or_else(|| plan.groups.first().map(|g| Subject::Group(g.id)))
+}
+
+/// "Add stay" button. `subject`/`housing` pin those fields when `Some`, otherwise
+/// a sensible default is chosen; disabled (with a hint) if no default exists.
+fn add_stay_button(ui: &mut egui::Ui, plan: &mut Plan, subject: Option<Subject>, housing: Option<Id>) {
+    let subject = subject.or_else(|| default_subject(plan));
+    let housing = housing.or_else(|| plan.housings.first().map(|h| h.id));
+    let enabled = subject.is_some() && housing.is_some();
+    ui.add_enabled_ui(enabled, |ui| {
+        if ui.button("➕ Add stay").clicked() {
+            let id = plan.new_id();
+            let today = chrono::Local::now().date_naive();
+            plan.stays.push(Stay {
+                id,
+                subject: subject.unwrap(),
+                housing: housing.unwrap(),
+                arrival: today,
+                departure: today + Duration::days(7),
+            });
+        }
+    });
+    if !enabled {
+        ui.label(
+            egui::RichText::new("Add a housing and a person/group first.")
+                .small()
+                .weak(),
+        );
+    }
+}
+
+/// Edit the stays matching `matches`. `edit_subject` / `edit_housing` show those
+/// combos (the field that's fixed for the current tab is hidden).
+fn stay_editor(
+    ui: &mut egui::Ui,
+    plan: &mut Plan,
+    matches: impl Fn(&Stay) -> bool,
+    edit_subject: bool,
+    edit_housing: bool,
+) {
+    let housings: Vec<(Id, String)> =
+        plan.housings.iter().map(|h| (h.id, h.name.clone())).collect();
+    let persons: Vec<(Id, String)> =
+        plan.persons.iter().map(|p| (p.id, p.name.clone())).collect();
+    let groups: Vec<(Id, String)> = plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
+
+    let subject_label = |s: Subject| -> String {
+        match s {
+            Subject::Person(id) => persons
+                .iter()
+                .find(|(i, _)| *i == id)
+                .map(|(_, n)| n.clone())
+                .unwrap_or_else(|| "<person>".into()),
+            Subject::Group(id) => groups
+                .iter()
+                .find(|(i, _)| *i == id)
+                .map(|(_, n)| format!("{} (group)", n))
+                .unwrap_or_else(|| "<group>".into()),
+        }
+    };
+    let housing_label = |id: Id| -> String {
+        housings
+            .iter()
+            .find(|(i, _)| *i == id)
+            .map(|(_, n)| n.clone())
+            .unwrap_or_else(|| "<housing>".into())
+    };
+
+    let mut delete: Option<Id> = None;
+    let mut any = false;
+    for stay in plan.stays.iter_mut() {
+        if !matches(stay) {
+            continue;
+        }
+        any = true;
+        ui.push_id(stay.id, |ui| {
+            ui.group(|ui| {
+                ui.horizontal(|ui| {
+                    if edit_subject {
+                        egui::ComboBox::from_id_salt("subj")
+                            .selected_text(subject_label(stay.subject))
+                            .show_ui(ui, |ui| {
+                                for (id, name) in &persons {
+                                    ui.selectable_value(&mut stay.subject, Subject::Person(*id), name);
+                                }
+                                for (id, name) in &groups {
+                                    ui.selectable_value(
+                                        &mut stay.subject,
+                                        Subject::Group(*id),
+                                        format!("{} (group)", name),
+                                    );
+                                }
+                            });
+                    }
+                    if edit_housing {
+                        egui::ComboBox::from_id_salt("house")
+                            .selected_text(housing_label(stay.housing))
+                            .show_ui(ui, |ui| {
+                                for (id, name) in &housings {
+                                    ui.selectable_value(&mut stay.housing, *id, name);
+                                }
+                            });
+                    }
+                    if ui.button("🗑").clicked() {
+                        delete = Some(stay.id);
+                    }
+                });
+                ui.horizontal(|ui| {
+                    date_edit(ui, &mut stay.arrival);
+                    ui.label("→");
+                    date_edit(ui, &mut stay.departure);
+                    if stay.departure < stay.arrival {
+                        stay.departure = stay.arrival;
+                    }
+                });
+            });
+        });
+    }
+    if !any {
+        ui.label(egui::RichText::new("(no stays)").weak().small());
+    }
+    if let Some(id) = delete {
+        plan.stays.retain(|s| s.id != id);
     }
 }

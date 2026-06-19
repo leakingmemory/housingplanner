@@ -7,7 +7,18 @@
 use chrono::{Datelike, Duration, NaiveDate, Weekday};
 use egui::{Align2, Color32, CornerRadius, FontId, Pos2, Rect, Sense, Stroke, StrokeKind, Vec2};
 
-use crate::model::{Plan, Stay};
+use crate::model::{Housing, Id, Plan, Stay, Subject};
+
+/// Selects what a [`show`] call renders: which housings become rows and which
+/// stays are drawn.
+pub struct Filter<'a> {
+    /// Housing ids to render as rows, in order.
+    pub housings: &'a [Id],
+    /// Predicate choosing which stays to draw.
+    pub include: &'a dyn Fn(&Stay) -> bool,
+    /// Centered text shown when there are no rows to draw.
+    pub empty_hint: &'a str,
+}
 
 /// Width of the left column listing housing names. Public so the app can map
 /// pointer positions to dates when zooming.
@@ -29,8 +40,12 @@ pub fn show(
     view_start: NaiveDate,
     days_visible: i64,
     day_width: f32,
+    filter: &Filter,
 ) -> egui::Response {
-    let rows = plan.housings.len().max(1);
+    // Resolve the requested housing ids to rows, skipping any that vanished.
+    let row_housings: Vec<&Housing> =
+        filter.housings.iter().filter_map(|id| plan.housing(*id)).collect();
+    let rows = row_housings.len().max(1);
     let plot_width = days_visible as f32 * day_width;
     let total_size = Vec2::new(
         LABEL_WIDTH + plot_width,
@@ -111,7 +126,7 @@ pub fn show(
     }
 
     // --- Housing rows. ---
-    for (i, housing) in plan.housings.iter().enumerate() {
+    for (i, housing) in row_housings.iter().enumerate() {
         let row_top = plot_top + i as f32 * ROW_HEIGHT;
         let row_bottom = row_top + ROW_HEIGHT;
 
@@ -173,7 +188,7 @@ pub fn show(
         let mut stays: Vec<&Stay> = plan
             .stays
             .iter()
-            .filter(|s| s.housing == housing.id)
+            .filter(|s| s.housing == housing.id && (filter.include)(s))
             .collect();
         stays.sort_by(|a, b| {
             a.arrival
@@ -250,6 +265,12 @@ pub fn show(
                     );
                 }
             }
+
+            // Hover tooltip: who / from / to. A hover-only region (it doesn't
+            // sense drags, so canvas panning still works underneath).
+            let conflicted = subject_conflicts.contains(&stay.id);
+            ui.interact(bar, response.id.with(stay.id), Sense::hover())
+                .on_hover_ui(|ui| stay_tooltip(ui, plan, housing, stay, conflicted));
         }
 
         // Double-booking overlay: a diagonal red hatch over every over-capacity
@@ -276,17 +297,37 @@ pub fn show(
         StrokeKind::Inside,
     );
 
-    if plan.housings.is_empty() {
+    if row_housings.is_empty() {
         painter.text(
             response.rect.center(),
             Align2::CENTER_CENTER,
-            "Add a housing in the side panel to start planning.",
+            filter.empty_hint,
             label_font,
             visuals.weak_text_color(),
         );
     }
 
     response
+}
+
+/// Tooltip contents for a stay bar: who, where, and the from/to dates.
+fn stay_tooltip(ui: &mut egui::Ui, plan: &Plan, housing: &Housing, stay: &Stay, conflicted: bool) {
+    ui.strong(plan.subject_label(stay.subject));
+    ui.label(format!("🏠 {}", housing.name));
+    ui.separator();
+    ui.label(format!("From:   {}", stay.arrival.format("%a %d %b %Y")));
+    ui.label(format!("To:     {}", stay.departure.format("%a %d %b %Y")));
+    let nights = (stay.departure - stay.arrival).num_days().max(0);
+    ui.label(format!("Nights: {nights}"));
+    if let Subject::Group(_) = stay.subject {
+        ui.label(format!("People: {}", plan.subject_headcount(stay.subject)));
+    }
+    if conflicted {
+        ui.colored_label(
+            SUBJECT_CONFLICT,
+            "⚠ Also booked elsewhere at the same time",
+        );
+    }
 }
 
 /// Greedily pack time intervals into stacked lanes so overlapping ones never

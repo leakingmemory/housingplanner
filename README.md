@@ -67,13 +67,28 @@ requires the `housingplanner` name registered in the store and a `SNAPCRAFT_LOGI
 repository secret. The snap version in `snap/snapcraft.yaml` is kept in sync with
 `Cargo.toml` (enforced by `check-versions.yml`).
 
+### Tabs
+- **📊 Overview** — the full timeline of all housings and stays.
+- **👥 Groups** — pick a group; edit its name/color, add/remove members (attach
+  existing people or create new ones), manage its stays, and see a timeline of
+  just that group across the housings it uses.
+- **🧍 Persons** — pick a person; edit name/group, manage their stays, and see a
+  timeline of their whereabouts (own stays **plus** any group they belong to).
+- **🏠 Housings** — pick a housing; edit capacity/notes, manage its stays, and see
+  that single housing's timeline (with the over-capacity hatch).
+
 ### Top bar controls
 - **From** — first date shown.
 - **Days** — how many days are visible.
 - **Zoom** — width of each day column.
 - **Today** / **Fit to stays** — jump the view.
 
+The top-bar controls and the timeline gestures below apply to every tab's
+timeline.
+
 ### Timeline gestures
+- **Hover** a stay bar for a tooltip with who, the housing, and the from/to dates
+  (plus nights, group headcount, and a double-booking warning where relevant).
 - **Drag** the timeline left/right to pan through time.
 - **Ctrl/Cmd + scroll** (or pinch on a trackpad) over the timeline to zoom,
   anchored on the date under the pointer. Plain scroll moves the housing list
@@ -152,7 +167,7 @@ cargo apk run --lib
 |------|---------|
 | `src/model.rs` | Data types (`Housing`, `Group`, `Person`, `Stay`, `Plan`) + helpers |
 | `src/timeline.rs` | The Gantt-style timeline rendering |
-| `src/app.rs` | eframe `App`: side-panel editors + central timeline + About window |
+| `src/app.rs` | eframe `App`: Overview/Groups/Persons/Housings tabs + per-tab timeline + About window |
 | `src/licenses.rs` | Embedded app + dependency license attribution |
 | `src/main.rs` | Desktop entry point (incl. `--licenses` flag) |
 | `src/lib.rs` | Shared library + Android `android_main` entry |
