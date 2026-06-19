@@ -155,6 +155,53 @@ impl Plan {
         self.stays.iter().map(|s| s.arrival).min()
     }
 
+    /// The set of persons a stay's subject puts in a housing (a group expands to
+    /// its current members).
+    fn stay_persons(&self, subject: Subject) -> Vec<Id> {
+        match subject {
+            Subject::Person(id) => vec![id],
+            Subject::Group(gid) => self
+                .persons
+                .iter()
+                .filter(|p| p.group == Some(gid))
+                .map(|p| p.id)
+                .collect(),
+        }
+    }
+
+    /// Ids of stays that put the same person in more than one housing at the
+    /// same time. A person can't be in two places at once, so both stays of each
+    /// clashing pair are returned. Groups are expanded to members, so an
+    /// individual stay overlapping that person's group elsewhere is caught too.
+    pub fn subject_double_bookings(&self) -> std::collections::HashSet<Id> {
+        let persons: Vec<Vec<Id>> = self
+            .stays
+            .iter()
+            .map(|s| self.stay_persons(s.subject))
+            .collect();
+
+        let mut conflicted = std::collections::HashSet::new();
+        for i in 0..self.stays.len() {
+            for j in (i + 1)..self.stays.len() {
+                let a = &self.stays[i];
+                let b = &self.stays[j];
+                // Only a problem if it's a *different* location and the dates
+                // actually overlap (departure is exclusive).
+                if a.housing == b.housing {
+                    continue;
+                }
+                if !(a.arrival < b.departure && b.arrival < a.departure) {
+                    continue;
+                }
+                if persons[i].iter().any(|p| persons[j].contains(p)) {
+                    conflicted.insert(a.id);
+                    conflicted.insert(b.id);
+                }
+            }
+        }
+        conflicted
+    }
+
     /// Ensure the id counter is past every id currently in use. Call this after
     /// loading a plan from an external file so freshly created entities can't
     /// collide with loaded ones.
@@ -262,6 +309,64 @@ mod tests {
         // Smiths (2) overlap Dana (1) on day +2..+4 in a capacity-2 housing.
         let day = today + chrono::Duration::days(2);
         assert!(plan.occupancy(cabin.id, day) > cabin.capacity);
+    }
+
+    #[test]
+    fn detects_person_in_two_places() {
+        let d = |n| chrono::NaiveDate::from_ymd_opt(2026, 1, n).unwrap();
+        let mut plan = Plan::default();
+        let (h1, h2) = (plan.new_id(), plan.new_id());
+        plan.housings.push(Housing { id: h1, name: "A".into(), capacity: 9, notes: String::new() });
+        plan.housings.push(Housing { id: h2, name: "B".into(), capacity: 9, notes: String::new() });
+        let p = plan.new_id();
+        plan.persons.push(Person { id: p, name: "P".into(), group: None });
+
+        let (s1, s2, s3) = (plan.new_id(), plan.new_id(), plan.new_id());
+        // s1 & s2 overlap in different housings -> clash. s3 is later, no clash.
+        plan.stays.push(Stay { id: s1, subject: Subject::Person(p), housing: h1, arrival: d(1), departure: d(5) });
+        plan.stays.push(Stay { id: s2, subject: Subject::Person(p), housing: h2, arrival: d(3), departure: d(7) });
+        plan.stays.push(Stay { id: s3, subject: Subject::Person(p), housing: h2, arrival: d(10), departure: d(12) });
+
+        let clash = plan.subject_double_bookings();
+        assert!(clash.contains(&s1) && clash.contains(&s2));
+        assert!(!clash.contains(&s3));
+    }
+
+    #[test]
+    fn group_member_clashes_with_individual_booking() {
+        let d = |n| chrono::NaiveDate::from_ymd_opt(2026, 1, n).unwrap();
+        let mut plan = Plan::default();
+        let (h1, h2) = (plan.new_id(), plan.new_id());
+        plan.housings.push(Housing { id: h1, name: "A".into(), capacity: 9, notes: String::new() });
+        plan.housings.push(Housing { id: h2, name: "B".into(), capacity: 9, notes: String::new() });
+        let g = plan.new_id();
+        plan.groups.push(Group { id: g, name: "G".into(), color: [1, 2, 3] });
+        let p = plan.new_id();
+        plan.persons.push(Person { id: p, name: "P".into(), group: Some(g) });
+
+        let (gs, ps) = (plan.new_id(), plan.new_id());
+        // Group booked at A; the member booked individually at B, overlapping.
+        plan.stays.push(Stay { id: gs, subject: Subject::Group(g), housing: h1, arrival: d(1), departure: d(5) });
+        plan.stays.push(Stay { id: ps, subject: Subject::Person(p), housing: h2, arrival: d(2), departure: d(4) });
+
+        let clash = plan.subject_double_bookings();
+        assert!(clash.contains(&gs) && clash.contains(&ps));
+    }
+
+    #[test]
+    fn same_housing_overlap_is_not_a_double_location() {
+        let d = |n| chrono::NaiveDate::from_ymd_opt(2026, 1, n).unwrap();
+        let mut plan = Plan::default();
+        let h = plan.new_id();
+        plan.housings.push(Housing { id: h, name: "A".into(), capacity: 9, notes: String::new() });
+        let p = plan.new_id();
+        plan.persons.push(Person { id: p, name: "P".into(), group: None });
+
+        let (s1, s2) = (plan.new_id(), plan.new_id());
+        plan.stays.push(Stay { id: s1, subject: Subject::Person(p), housing: h, arrival: d(1), departure: d(5) });
+        plan.stays.push(Stay { id: s2, subject: Subject::Person(p), housing: h, arrival: d(3), departure: d(7) });
+
+        assert!(plan.subject_double_bookings().is_empty());
     }
 
     #[test]

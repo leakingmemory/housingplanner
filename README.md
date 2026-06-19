@@ -23,6 +23,11 @@ the housing's capacity, that date span is overlaid with a diagonal red **hatch**
 — a clear double-booking indicator. A housing's name also turns red with a ⚠
 when over capacity, and the red vertical line marks today.
 
+If the same person or group is booked in **two locations at the same time**
+(impossible to satisfy), each involved bar gets an amber border and a "!" badge.
+Groups are expanded to their members, so a person booked individually while their
+group is booked elsewhere is flagged too.
+
 Data is saved automatically via `eframe`'s built-in storage (per-OS app data
 directory), so it persists across runs on every platform without managing file
 paths.

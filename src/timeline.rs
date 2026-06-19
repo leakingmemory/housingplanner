@@ -17,6 +17,8 @@ const ROW_HEIGHT: f32 = 34.0;
 const BAR_PADDING: f32 = 5.0;
 /// Vertical gap between stacked sub-lanes within a housing row.
 const LANE_GAP: f32 = 1.5;
+/// Marker color for a subject booked in two places at once.
+const SUBJECT_CONFLICT: Color32 = Color32::from_rgb(255, 145, 0);
 
 /// Render the timeline into `ui` and return the canvas [`egui::Response`] so the
 /// caller can implement drag-to-pan. The caller is responsible for wrapping this
@@ -39,6 +41,8 @@ pub fn show(
     let (response, painter) = ui.allocate_painter(total_size, Sense::click_and_drag());
     let origin = response.rect.min;
     let today = chrono::Local::now().date_naive();
+    // Stays whose subject is booked in two places at once.
+    let subject_conflicts = plan.subject_double_bookings();
 
     // Maps a calendar date to an x coordinate in screen space.
     let date_x = |date: NaiveDate| -> f32 {
@@ -200,6 +204,31 @@ pub fn show(
                     bar_font.clone(),
                     text_color,
                 );
+            }
+
+            // Subject double-booked elsewhere at the same time: amber border, and
+            // a "!" badge at the right edge when there's room.
+            if subject_conflicts.contains(&stay.id) {
+                painter.rect_stroke(
+                    bar,
+                    corner,
+                    Stroke::new(2.5, SUBJECT_CONFLICT),
+                    StrokeKind::Inside,
+                );
+                if lane_h >= 12.0 {
+                    let r = (lane_h * 0.5 - 1.5).clamp(4.0, 7.0);
+                    let cx = (bar.max.x - r - 2.0).max(bar.min.x + r);
+                    let center = Pos2::new(cx, bar.center().y);
+                    let badge = painter.with_clip_rect(bar);
+                    badge.circle_filled(center, r, SUBJECT_CONFLICT);
+                    badge.text(
+                        center,
+                        Align2::CENTER_CENTER,
+                        "!",
+                        FontId::proportional(r * 1.5),
+                        Color32::WHITE,
+                    );
+                }
             }
         }
 
