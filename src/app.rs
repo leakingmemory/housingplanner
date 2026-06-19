@@ -6,6 +6,8 @@ use crate::model::{Group, Housing, Id, Person, Plan, Stay, Subject, GROUP_PALETT
 use crate::timeline;
 
 /// Storage key used for `eframe`'s built-in cross-platform persistence.
+/// Kept as the original value so plans saved before the project rename still
+/// load (only the migrated storage directory changed).
 const STORAGE_KEY: &str = "hplan_plan";
 
 /// Pixel width of a single day column, clamped to this range (shared by the
@@ -136,7 +138,7 @@ impl PlannerApp {
     fn top_bar(&mut self, ui: &mut egui::Ui) {
         egui::Panel::top("top").show_inside(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("hplan");
+                ui.heading("Housing Planner");
                 ui.separator();
 
                 ui.label("From:");
@@ -185,7 +187,7 @@ impl PlannerApp {
     #[cfg(not(target_os = "android"))]
     fn save_to_file(&mut self) {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("hplan plan", &["json"])
+            .add_filter("Housing Planner plan", &["json"])
             .set_file_name("plan.json")
             .save_file()
         else {
@@ -204,7 +206,7 @@ impl PlannerApp {
     #[cfg(not(target_os = "android"))]
     fn load_from_file(&mut self) {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("hplan plan", &["json"])
+            .add_filter("Housing Planner plan", &["json"])
             .pick_file()
         else {
             return; // user cancelled

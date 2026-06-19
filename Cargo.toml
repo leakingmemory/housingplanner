@@ -1,18 +1,18 @@
 [package]
-name = "hplan"
+name = "housingplanner"
 version = "0.1.0"
 edition = "2021"
 description = "Housing & stay planner: visualize who stays where, and when, over time."
 license = "MIT OR Apache-2.0"
 
 [lib]
-name = "hplan"
+name = "housingplanner"
 # Build as both a normal Rust lib and a C-ABI dynamic lib so the same code
 # can back the desktop binary and an Android app.
 crate-type = ["lib", "cdylib"]
 
 [[bin]]
-name = "hplan"
+name = "housingplanner"
 path = "src/main.rs"
 
 [dependencies]

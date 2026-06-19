@@ -1,4 +1,4 @@
-# hplan
+# housingplanner
 
 A small cross-platform desktop (and, with extra setup, Android) app for
 planning **who stays where, and when**. You register housings, people and

@@ -1,4 +1,4 @@
-//! hplan — a cross-platform housing & stay planner.
+//! housingplanner — a cross-platform housing & stay planner.
 //!
 //! The desktop binary lives in `main.rs`; on Android the entry point is the
 //! `android_main` export below. Both share the same [`app::PlannerApp`].
@@ -27,9 +27,9 @@ pub fn android_main(app: winit::platform::android::activity::AndroidApp) {
     };
 
     eframe::run_native(
-        "hplan",
+        "Housing Planner",
         options,
         Box::new(|cc| Ok(Box::new(crate::app::PlannerApp::new(cc)))),
     )
-    .expect("failed to start hplan");
+    .expect("failed to start Housing Planner");
 }

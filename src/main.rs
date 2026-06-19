@@ -9,13 +9,13 @@ fn main() -> eframe::Result {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1280.0, 800.0])
             .with_min_inner_size([800.0, 480.0])
-            .with_title("hplan — housing & stay planner"),
+            .with_title("Housing Planner"),
         ..Default::default()
     };
 
     eframe::run_native(
-        "hplan",
+        "Housing Planner",
         options,
-        Box::new(|cc| Ok(Box::new(hplan::app::PlannerApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(housingplanner::app::PlannerApp::new(cc)))),
     )
 }
