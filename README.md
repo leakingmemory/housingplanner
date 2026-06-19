@@ -24,6 +24,11 @@ Data is saved automatically via `eframe`'s built-in storage (per-OS app data
 directory), so it persists across runs on every platform without managing file
 paths.
 
+You can also **save/load an explicit `.json` file** with the buttons in the top
+bar (💾 Save… / 📂 Load…), e.g. to share a plan or keep backups. The native file
+dialog uses Win32 on Windows and the xdg-desktop-portal on Linux (no GTK build
+dependency). Loading replaces the current plan.
+
 ## Run (desktop: Linux / Windows / macOS)
 
 ```sh

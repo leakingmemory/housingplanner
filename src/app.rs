@@ -14,6 +14,8 @@ pub struct PlannerApp {
     view_start: NaiveDate,
     days_visible: i64,
     day_width: f32,
+    /// Transient status line (e.g. result of the last file save/load).
+    status: String,
 }
 
 impl PlannerApp {
@@ -34,6 +36,7 @@ impl PlannerApp {
             view_start,
             days_visible: 30,
             day_width: 26.0,
+            status: String::new(),
         }
     }
 }
@@ -89,8 +92,81 @@ impl PlannerApp {
                         self.view_start = first - Duration::days(2);
                     }
                 }
+
+                ui.separator();
+                if ui.button("💾 Save…").clicked() {
+                    self.save_to_file();
+                }
+                if ui.button("📂 Load…").clicked() {
+                    self.load_from_file();
+                }
+
+                if !self.status.is_empty() {
+                    ui.separator();
+                    ui.label(egui::RichText::new(&self.status).weak());
+                }
             });
         });
+    }
+
+    /// Prompt for a path and write the current plan as JSON.
+    #[cfg(not(target_os = "android"))]
+    fn save_to_file(&mut self) {
+        let Some(path) = rfd::FileDialog::new()
+            .add_filter("hplan plan", &["json"])
+            .set_file_name("plan.json")
+            .save_file()
+        else {
+            return; // user cancelled
+        };
+        match serde_json::to_string_pretty(&self.plan) {
+            Ok(json) => match std::fs::write(&path, json) {
+                Ok(()) => self.status = format!("Saved → {}", path.display()),
+                Err(e) => self.status = format!("Save failed: {e}"),
+            },
+            Err(e) => self.status = format!("Encode failed: {e}"),
+        }
+    }
+
+    /// Prompt for a path and replace the current plan with one loaded from JSON.
+    #[cfg(not(target_os = "android"))]
+    fn load_from_file(&mut self) {
+        let Some(path) = rfd::FileDialog::new()
+            .add_filter("hplan plan", &["json"])
+            .pick_file()
+        else {
+            return; // user cancelled
+        };
+        let text = match std::fs::read_to_string(&path) {
+            Ok(t) => t,
+            Err(e) => {
+                self.status = format!("Read failed: {e}");
+                return;
+            }
+        };
+        match serde_json::from_str::<crate::model::Plan>(&text) {
+            Ok(mut plan) => {
+                plan.reseed_ids();
+                self.view_start = plan
+                    .earliest_arrival()
+                    .map(|d| d - Duration::days(2))
+                    .unwrap_or_else(|| chrono::Local::now().date_naive());
+                self.plan = plan;
+                self.status = format!("Loaded ← {}", path.display());
+            }
+            Err(e) => self.status = format!("Parse failed: {e}"),
+        }
+    }
+
+    // On Android the native file picker needs the activity/intents plumbing;
+    // for now these are no-ops there (auto-persistence still applies).
+    #[cfg(target_os = "android")]
+    fn save_to_file(&mut self) {
+        self.status = "File save is not available on Android yet.".to_owned();
+    }
+    #[cfg(target_os = "android")]
+    fn load_from_file(&mut self) {
+        self.status = "File load is not available on Android yet.".to_owned();
     }
 
     fn side_panel(&mut self, ui: &mut egui::Ui) {

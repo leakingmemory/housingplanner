@@ -155,6 +155,24 @@ impl Plan {
         self.stays.iter().map(|s| s.arrival).min()
     }
 
+    /// Ensure the id counter is past every id currently in use. Call this after
+    /// loading a plan from an external file so freshly created entities can't
+    /// collide with loaded ones.
+    pub fn reseed_ids(&mut self) {
+        let max = self
+            .housings
+            .iter()
+            .map(|h| h.id)
+            .chain(self.groups.iter().map(|g| g.id))
+            .chain(self.persons.iter().map(|p| p.id))
+            .chain(self.stays.iter().map(|s| s.id))
+            .max()
+            .unwrap_or(0);
+        if self.next_id <= max {
+            self.next_id = max + 1;
+        }
+    }
+
     /// True if nothing has been entered yet.
     pub fn is_empty(&self) -> bool {
         self.housings.is_empty() && self.persons.is_empty() && self.groups.is_empty()
@@ -205,3 +223,38 @@ pub const GROUP_PALETTE: [[u8; 3]; 8] = [
     [26, 188, 156],  // teal
     [233, 30, 99],   // pink
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn json_round_trip_preserves_plan() {
+        let mut plan = Plan::default();
+        plan.load_sample();
+
+        let json = serde_json::to_string_pretty(&plan).expect("serialize");
+        let back: Plan = serde_json::from_str(&json).expect("deserialize");
+
+        assert_eq!(plan.housings.len(), back.housings.len());
+        assert_eq!(plan.persons.len(), back.persons.len());
+        assert_eq!(plan.groups.len(), back.groups.len());
+        assert_eq!(plan.stays.len(), back.stays.len());
+        // Spot-check a value survives the trip.
+        assert_eq!(plan.housings[0].name, back.housings[0].name);
+        assert_eq!(plan.stays[0].arrival, back.stays[0].arrival);
+    }
+
+    #[test]
+    fn reseed_ids_avoids_collisions() {
+        // Simulate a file whose ids are high but whose next_id is stale.
+        let json = r#"{
+            "housings": [{"id": 50, "name": "H", "capacity": 2, "notes": ""}],
+            "groups": [], "persons": [], "stays": [], "next_id": 1
+        }"#;
+        let mut plan: Plan = serde_json::from_str(json).expect("deserialize");
+        plan.reseed_ids();
+        let fresh = plan.new_id();
+        assert!(fresh > 50, "new id {fresh} must not collide with loaded ids");
+    }
+}
