@@ -15,6 +15,8 @@ pub const LABEL_WIDTH: f32 = 160.0;
 const HEADER_HEIGHT: f32 = 28.0;
 const ROW_HEIGHT: f32 = 34.0;
 const BAR_PADDING: f32 = 5.0;
+/// Vertical gap between stacked sub-lanes within a housing row.
+const LANE_GAP: f32 = 1.5;
 
 /// Render the timeline into `ui` and return the canvas [`egui::Response`] so the
 /// caller can implement drag-to-pan. The caller is responsible for wrapping this
@@ -106,15 +108,23 @@ pub fn show(
             Stroke::new(1.0, grid_color),
         );
 
-        // Over-capacity check across the visible range.
-        let mut over_capacity = false;
-        for d in 0..days_visible {
+        // Find the date spans where occupancy exceeds capacity (double booking),
+        // merging consecutive over-capacity days into runs.
+        let mut conflict_spans: Vec<(NaiveDate, NaiveDate)> = Vec::new();
+        let mut run_start: Option<NaiveDate> = None;
+        for d in 0..=days_visible {
             let date = view_start + Duration::days(d);
-            if plan.occupancy(housing.id, date) > housing.capacity {
-                over_capacity = true;
-                break;
+            let over = d < days_visible && plan.occupancy(housing.id, date) > housing.capacity;
+            match (over, run_start) {
+                (true, None) => run_start = Some(date),
+                (false, Some(start)) => {
+                    conflict_spans.push((start, date));
+                    run_start = None;
+                }
+                _ => {}
             }
         }
+        let over_capacity = !conflict_spans.is_empty();
 
         // Left label column.
         let name_color = if over_capacity {
@@ -142,43 +152,70 @@ pub fn show(
             visuals.weak_text_color(),
         );
 
-        // Bars for every stay in this housing.
+        // Bars for every stay in this housing. Overlapping stays are packed
+        // into stacked sub-lanes so no bar is ever hidden behind another.
         let mut stays: Vec<&Stay> = plan.stays.iter().filter(|s| s.housing == housing.id).collect();
-        stays.sort_by_key(|s| s.arrival);
-        for stay in stays {
-            let view_end = view_start + Duration::days(days_visible);
+        stays.sort_by(|a, b| a.arrival.cmp(&b.arrival).then(a.departure.cmp(&b.departure)));
+
+        let intervals: Vec<(NaiveDate, NaiveDate)> =
+            stays.iter().map(|s| (s.arrival, s.departure)).collect();
+        let (lane_of, lane_count) = pack_lanes(&intervals);
+
+        let band_top = row_top + BAR_PADDING;
+        let band_h = ROW_HEIGHT - 2.0 * BAR_PADDING;
+        let lane_h = band_h / lane_count as f32;
+        let view_end = view_start + Duration::days(days_visible);
+
+        for (idx, stay) in stays.iter().enumerate() {
             // Skip stays entirely outside the visible window.
             if stay.departure <= view_start || stay.arrival >= view_end {
                 continue;
             }
+            let lane = lane_of[idx];
             let x0 = date_x(stay.arrival).max(plot_left);
             let x1 = date_x(stay.departure).min(plot_right).max(x0 + 2.0);
-            let bar = Rect::from_min_max(
-                Pos2::new(x0 + 1.0, row_top + BAR_PADDING),
-                Pos2::new(x1 - 1.0, row_bottom - BAR_PADDING),
-            );
+            let y0 = band_top + lane as f32 * lane_h;
+            let y1 = y0 + (lane_h - LANE_GAP).max(2.0);
+            let bar = Rect::from_min_max(Pos2::new(x0 + 1.0, y0), Pos2::new(x1 - 1.0, y1));
 
             let [r, g, b] = plan.subject_color(stay.subject);
             let fill = Color32::from_rgb(r, g, b);
-            painter.rect_filled(bar, CornerRadius::same(4), fill);
+            let corner = CornerRadius::same(if lane_h >= 12.0 { 4 } else { 2 });
+            painter.rect_filled(bar, corner, fill);
             painter.rect_stroke(
                 bar,
-                CornerRadius::same(4),
+                corner,
                 Stroke::new(1.0, fill.gamma_multiply(0.6)),
                 StrokeKind::Inside,
             );
 
-            // Label, clipped to the bar so it never overflows into neighbours.
-            let text_color = contrast_color(fill);
-            painter
-                .with_clip_rect(bar)
-                .text(
+            // Only label when the lane is tall enough to read; otherwise the
+            // color alone distinguishes the occupant.
+            if lane_h >= 13.0 {
+                let text_color = contrast_color(fill);
+                painter.with_clip_rect(bar).text(
                     Pos2::new(bar.min.x + 4.0, bar.center().y),
                     Align2::LEFT_CENTER,
                     plan.subject_label(stay.subject),
                     bar_font.clone(),
                     text_color,
                 );
+            }
+        }
+
+        // Double-booking overlay: a diagonal red hatch over every over-capacity
+        // span. Translucent so the underlying bars still show, but unmistakable.
+        for (start, end) in &conflict_spans {
+            let cx0 = date_x(*start).max(plot_left);
+            let cx1 = date_x(*end).min(plot_right);
+            if cx1 <= cx0 {
+                continue;
+            }
+            let span = Rect::from_min_max(
+                Pos2::new(cx0, row_top + 1.0),
+                Pos2::new(cx1, row_bottom - 1.0),
+            );
+            draw_conflict_hatch(&painter, span);
         }
     }
 
@@ -203,6 +240,59 @@ pub fn show(
     response
 }
 
+/// Greedily pack time intervals into stacked lanes so overlapping ones never
+/// share a lane. `intervals` must be sorted by arrival. Returns the lane index
+/// chosen for each interval and the total number of lanes used (>= 1).
+///
+/// A lane is free for a new interval once its previous occupant's departure is
+/// at or before the new arrival (departure is exclusive — checkout day).
+fn pack_lanes(intervals: &[(NaiveDate, NaiveDate)]) -> (Vec<usize>, usize) {
+    let mut lane_free_from: Vec<NaiveDate> = Vec::new();
+    let mut lane_of: Vec<usize> = Vec::with_capacity(intervals.len());
+    for &(arrival, departure) in intervals {
+        let lane = match lane_free_from.iter().position(|&end| end <= arrival) {
+            Some(l) => {
+                lane_free_from[l] = departure;
+                l
+            }
+            None => {
+                lane_free_from.push(departure);
+                lane_free_from.len() - 1
+            }
+        };
+        lane_of.push(lane);
+    }
+    (lane_of, lane_free_from.len().max(1))
+}
+
+/// Overlay a translucent diagonal red hatch (plus border) marking a date span
+/// where occupancy exceeds capacity — a clearly distinguishable double-booking
+/// indicator that doesn't hide the underlying bars.
+fn draw_conflict_hatch(painter: &egui::Painter, span: Rect) {
+    let line = Color32::from_rgba_unmultiplied(220, 40, 40, 150);
+    let p = painter.with_clip_rect(span);
+    let h = span.height();
+    let step = 7.0;
+    // Diagonal lines from bottom-left to top-right, offset to fill the rect.
+    let mut x = span.min.x - h;
+    while x < span.max.x {
+        p.line_segment(
+            [
+                Pos2::new(x, span.max.y),
+                Pos2::new(x + h, span.min.y),
+            ],
+            Stroke::new(1.5, line),
+        );
+        x += step;
+    }
+    painter.rect_stroke(
+        span,
+        CornerRadius::ZERO,
+        Stroke::new(1.5, Color32::from_rgb(200, 30, 30)),
+        StrokeKind::Inside,
+    );
+}
+
 /// Pick black or white text depending on background luminance.
 fn contrast_color(bg: Color32) -> Color32 {
     let luma = 0.299 * bg.r() as f32 + 0.587 * bg.g() as f32 + 0.114 * bg.b() as f32;
@@ -210,5 +300,43 @@ fn contrast_color(bg: Color32) -> Color32 {
         Color32::from_rgb(20, 20, 20)
     } else {
         Color32::from_rgb(245, 245, 245)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::pack_lanes;
+    use chrono::NaiveDate;
+
+    fn d(day: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(2026, 1, day).unwrap()
+    }
+
+    #[test]
+    fn non_overlapping_share_one_lane() {
+        // Back-to-back (checkout day == next arrival) may reuse the same lane.
+        let intervals = [(d(1), d(3)), (d(3), d(5)), (d(5), d(7))];
+        let (lanes, count) = pack_lanes(&intervals);
+        assert_eq!(count, 1);
+        assert_eq!(lanes, vec![0, 0, 0]);
+    }
+
+    #[test]
+    fn overlapping_get_separate_lanes() {
+        // Three intervals all covering day 4 -> three distinct lanes.
+        let intervals = [(d(1), d(5)), (d(2), d(6)), (d(3), d(7))];
+        let (lanes, count) = pack_lanes(&intervals);
+        assert_eq!(count, 3);
+        assert_eq!(lanes, vec![0, 1, 2]);
+    }
+
+    #[test]
+    fn freed_lane_is_reused() {
+        // Second interval overlaps the first (needs lane 1), third starts after
+        // the first ends and should reuse lane 0.
+        let intervals = [(d(1), d(4)), (d(2), d(6)), (d(4), d(8))];
+        let (lanes, count) = pack_lanes(&intervals);
+        assert_eq!(count, 2);
+        assert_eq!(lanes, vec![0, 1, 0]);
     }
 }

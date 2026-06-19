@@ -16,9 +16,12 @@ Built in Rust with [`egui`](https://github.com/emilk/egui) / `eframe`.
   `arrival → departure` date range. Arrival is the first night, departure is the
   checkout day.
 
-The timeline draws each housing as a row and each stay as a colored bar. A
-housing's name turns red with a ⚠ when its capacity is exceeded on any visible
-day. The red vertical line marks today.
+The timeline draws each housing as a row and each stay as a colored bar.
+Overlapping stays in the same housing are stacked into sub-lanes so each
+occupant's color stays visible (no bar hides another). Where occupancy exceeds
+the housing's capacity, that date span is overlaid with a diagonal red **hatch**
+— a clear double-booking indicator. A housing's name also turns red with a ⚠
+when over capacity, and the red vertical line marks today.
 
 Data is saved automatically via `eframe`'s built-in storage (per-OS app data
 directory), so it persists across runs on every platform without managing file

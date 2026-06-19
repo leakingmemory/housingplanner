@@ -185,7 +185,7 @@ impl Plan {
 
         let cabin = self.new_id();
         let lodge = self.new_id();
-        self.housings.push(Housing { id: cabin, name: "Cabin A".into(), capacity: 4, notes: String::new() });
+        self.housings.push(Housing { id: cabin, name: "Cabin A".into(), capacity: 2, notes: String::new() });
         self.housings.push(Housing { id: lodge, name: "Lodge".into(), capacity: 6, notes: String::new() });
 
         let smiths = self.new_id();
@@ -203,9 +203,12 @@ impl Plan {
         let s1 = self.new_id();
         let s2 = self.new_id();
         let s3 = self.new_id();
+        let s4 = self.new_id();
         self.stays.push(Stay { id: s1, subject: Subject::Group(smiths), housing: cabin, arrival: d(0), departure: d(5) });
         self.stays.push(Stay { id: s2, subject: Subject::Person(dana), housing: lodge, arrival: d(2), departure: d(9) });
         self.stays.push(Stay { id: s3, subject: Subject::Group(crew), housing: lodge, arrival: d(6), departure: d(12) });
+        // Overlaps the Smiths in Cabin A (capacity 2) on days 2–4 → double booking.
+        self.stays.push(Stay { id: s4, subject: Subject::Person(dana), housing: cabin, arrival: d(2), departure: d(4) });
     }
 }
 
@@ -243,6 +246,22 @@ mod tests {
         // Spot-check a value survives the trip.
         assert_eq!(plan.housings[0].name, back.housings[0].name);
         assert_eq!(plan.stays[0].arrival, back.stays[0].arrival);
+    }
+
+    #[test]
+    fn sample_has_an_over_capacity_day() {
+        let mut plan = Plan::default();
+        plan.load_sample();
+
+        let cabin = plan
+            .housings
+            .iter()
+            .find(|h| h.name == "Cabin A")
+            .expect("cabin exists");
+        let today = chrono::Local::now().date_naive();
+        // Smiths (2) overlap Dana (1) on day +2..+4 in a capacity-2 housing.
+        let day = today + chrono::Duration::days(2);
+        assert!(plan.occupancy(cabin.id, day) > cabin.capacity);
     }
 
     #[test]
