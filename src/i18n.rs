@@ -12,6 +12,7 @@ pub enum Lang {
     English,
     Swedish,
     Norwegian,
+    NorwegianNynorsk,
 }
 
 impl Default for Lang {
@@ -22,7 +23,12 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 3] = [Lang::English, Lang::Swedish, Lang::Norwegian];
+    pub const ALL: [Lang; 4] = [
+        Lang::English,
+        Lang::Swedish,
+        Lang::Norwegian,
+        Lang::NorwegianNynorsk,
+    ];
 
     /// Native name shown in the language picker.
     pub fn label(self) -> &'static str {
@@ -30,6 +36,7 @@ impl Lang {
             Lang::English => "English",
             Lang::Swedish => "Svenska",
             Lang::Norwegian => "Norsk bokmål",
+            Lang::NorwegianNynorsk => "Norsk nynorsk",
         }
     }
 
@@ -42,7 +49,9 @@ impl Lang {
             .to_ascii_lowercase();
         if v.starts_with("sv") {
             Lang::Swedish
-        } else if v.starts_with("nb") || v.starts_with("no") || v.starts_with("nn") {
+        } else if v.starts_with("nn") {
+            Lang::NorwegianNynorsk
+        } else if v.starts_with("nb") || v.starts_with("no") {
             Lang::Norwegian
         } else {
             Lang::English
@@ -56,6 +65,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::English => en,
         Lang::Swedish => sv(en),
         Lang::Norwegian => nb(en),
+        Lang::NorwegianNynorsk => nn(en),
     }
 }
 
@@ -271,6 +281,116 @@ fn nb(en: &'static str) -> &'static str {
         "⚠ Also booked elsewhere at the same time" => "⚠ Også booket et annet sted samtidig",
         "<deleted person>" => "<slettet person>",
         "<deleted group>" => "<slettet gruppe>",
+
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Norwegian Nynorsk translations, keyed by the English source string. Unknown
+/// strings fall back to English.
+fn nn(en: &'static str) -> &'static str {
+    match en {
+        // Tabs
+        "📊 Overview" => "📊 Oversikt",
+        "👥 Groups" => "👥 Grupper",
+        "🧍 Persons" => "🧍 Personar",
+        "🏠 Housings" => "🏠 Bustader",
+
+        // Top bar
+        "From:" => "Frå:",
+        "Days:" => "Dagar:",
+        "Zoom:" => "Zoom:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Eller Ctrl/Cmd + rull (knip på styreplate) over tidslinja"
+        }
+        "Today" => "I dag",
+        "Fit to stays" => "Tilpass til opphald",
+        "💾 Save…" => "💾 Lagre…",
+        "📂 Load…" => "📂 Opne…",
+        "ℹ About" => "ℹ Om",
+        "Language" => "Språk",
+
+        // Status messages (used as prefixes before a path / error)
+        "Saved →" => "Lagra →",
+        "Loaded ←" => "Opna ←",
+        "Save failed:" => "Kunne ikkje lagre:",
+        "Encode failed:" => "Kunne ikkje kode:",
+        "Read failed:" => "Kunne ikkje lese:",
+        "Parse failed:" => "Kunne ikkje tolke:",
+        "File save is not available on Android yet." => {
+            "Fillagring er ikkje tilgjengeleg på Android enno."
+        }
+        "File load is not available on Android yet." => {
+            "Filopning er ikkje tilgjengeleg på Android enno."
+        }
+        "Housing Planner plan" => "Housing Planner-plan",
+
+        // About window
+        "About / Licenses" => "Om / Lisensar",
+        "Version" => "Versjon",
+        "Plan who stays where, and when." => "Planlegg kven som bur kvar, og når.",
+        "📋 Copy dependency licenses" => "📋 Kopier avhengnadslisensar",
+        "This application" => "Denne applikasjonen",
+        "Third-party dependencies" => "Tredjepartsavhengnader",
+
+        // Overview tab
+        "Welcome to Housing Planner" => "Velkomen til Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Legg til bustader, grupper og personar i fanene over —"
+        }
+        "📋 Load example data" => "📋 Last inn eksempeldata",
+        "Add a housing in the Housings tab to start planning." => {
+            "Legg til ein bustad i fana Bustader for å byrje å planleggje."
+        }
+
+        // Selectors / common
+        "Group" => "Gruppe",
+        "Person" => "Person",
+        "Housing" => "Bustad",
+        "➕ New" => "➕ Ny",
+        "Stays:" => "Opphald:",
+        "Stays (individual):" => "Opphald (individuelle):",
+        "➕ Add stay" => "➕ Legg til opphald",
+        "Add a housing and a person/group first." => {
+            "Legg til ein bustad og ein person/gruppe først."
+        }
+        "(no stays)" => "(ingen opphald)",
+        "(group)" => "(gruppe)",
+
+        // Groups tab
+        "No groups yet — add one." => "Ingen grupper enno — legg til ei.",
+        "🗑 Delete group" => "🗑 Slett gruppe",
+        "Members:" => "Medlemmer:",
+        "(no members)" => "(ingen medlemmer)",
+        "➕ Add existing…" => "➕ Legg til eksisterande…",
+        "➕ New person" => "➕ Ny person",
+        "Select or create a group." => "Vel eller opprett ei gruppe.",
+        "No stays for this group yet." => "Ingen opphald for denne gruppa enno.",
+
+        // Persons tab
+        "No persons yet — add one." => "Ingen personar enno — legg til ein.",
+        "— no group —" => "— inga gruppe —",
+        "🗑 Delete person" => "🗑 Slett person",
+        "Select or create a person." => "Vel eller opprett ein person.",
+        "No stays for this person yet." => "Ingen opphald for denne personen enno.",
+
+        // Housings tab
+        "No housings yet — add one." => "Ingen bustader enno — legg til ein.",
+        "Capacity" => "Kapasitet",
+        "Notes:" => "Notat:",
+        "🗑 Delete housing" => "🗑 Slett bustad",
+        "Select or create a housing." => "Vel eller opprett ein bustad.",
+        "No stays in this housing yet." => "Ingen opphald i denne bustaden enno.",
+
+        // Timeline
+        "cap" => "kap",
+        "To:" => "Til:",
+        "Nights:" => "Netter:",
+        "People:" => "Personar:",
+        "⚠ Also booked elsewhere at the same time" => "⚠ Også booka ein annan stad samstundes",
+        "<deleted person>" => "<sletta person>",
+        "<deleted group>" => "<sletta gruppe>",
 
         // Fallback: English
         other => other,
