@@ -100,17 +100,18 @@ impl Plan {
         self.persons.iter().find(|p| p.id == id)
     }
 
-    /// Human-readable label for a stay's subject.
-    pub fn subject_label(&self, subject: Subject) -> String {
+    /// Human-readable label for a stay's subject, localized for `lang`.
+    pub fn subject_label(&self, subject: Subject, lang: crate::i18n::Lang) -> String {
+        use crate::i18n::tr;
         match subject {
             Subject::Person(id) => self
                 .person(id)
                 .map(|p| p.name.clone())
-                .unwrap_or_else(|| "<deleted person>".to_owned()),
+                .unwrap_or_else(|| tr(lang, "<deleted person>").to_owned()),
             Subject::Group(id) => self
                 .group(id)
-                .map(|g| format!("{} (group)", g.name))
-                .unwrap_or_else(|| "<deleted group>".to_owned()),
+                .map(|g| format!("{} {}", g.name, tr(lang, "(group)")))
+                .unwrap_or_else(|| tr(lang, "<deleted group>").to_owned()),
         }
     }
 

@@ -82,6 +82,8 @@ repository secret. The snap version in `snap/snapcraft.yaml` is kept in sync wit
 - **Days** — how many days are visible.
 - **Zoom** — width of each day column.
 - **Today** / **Fit to stays** — jump the view.
+- **🌐 Language** — switch between English and Svenska (Swedish). Remembered
+  between runs; defaults to your system locale (`LANG` / `LC_*`).
 
 The top-bar controls and the timeline gestures below apply to every tab's
 timeline.

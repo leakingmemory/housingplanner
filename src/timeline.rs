@@ -7,6 +7,7 @@
 use chrono::{Datelike, Duration, NaiveDate, Weekday};
 use egui::{Align2, Color32, CornerRadius, FontId, Pos2, Rect, Sense, Stroke, StrokeKind, Vec2};
 
+use crate::i18n::{tr, Lang};
 use crate::model::{Housing, Id, Plan, Stay, Subject};
 
 /// Selects what a [`show`] call renders: which housings become rows and which
@@ -40,6 +41,7 @@ pub fn show(
     view_start: NaiveDate,
     days_visible: i64,
     day_width: f32,
+    lang: Lang,
     filter: &Filter,
 ) -> egui::Response {
     // Resolve the requested housing ids to rows, skipping any that vanished.
@@ -174,9 +176,9 @@ pub fn show(
             name_color,
         );
         let cap_text = if over_capacity {
-            format!("cap {} ⚠", housing.capacity)
+            format!("{} {} ⚠", tr(lang, "cap"), housing.capacity)
         } else {
-            format!("cap {}", housing.capacity)
+            format!("{} {}", tr(lang, "cap"), housing.capacity)
         };
         painter.text(
             Pos2::new(origin.x + 6.0, row_top + ROW_HEIGHT - 8.0),
@@ -238,7 +240,7 @@ pub fn show(
                 painter.with_clip_rect(bar).text(
                     Pos2::new(bar.min.x + 4.0, bar.center().y),
                     Align2::LEFT_CENTER,
-                    plan.subject_label(stay.subject),
+                    plan.subject_label(stay.subject, lang),
                     bar_font.clone(),
                     text_color,
                 );
@@ -273,7 +275,7 @@ pub fn show(
             // sense drags, so canvas panning still works underneath).
             let conflicted = subject_conflicts.contains(&stay.id);
             ui.interact(bar, response.id.with(stay.id), Sense::hover())
-                .on_hover_ui(|ui| stay_tooltip(ui, plan, housing, stay, conflicted));
+                .on_hover_ui(|ui| stay_tooltip(ui, plan, housing, stay, conflicted, lang));
         }
 
         // Double-booking overlay: a diagonal red hatch over every over-capacity
@@ -314,19 +316,41 @@ pub fn show(
 }
 
 /// Tooltip contents for a stay bar: who, where, and the from/to dates.
-fn stay_tooltip(ui: &mut egui::Ui, plan: &Plan, housing: &Housing, stay: &Stay, conflicted: bool) {
-    ui.strong(plan.subject_label(stay.subject));
+fn stay_tooltip(
+    ui: &mut egui::Ui,
+    plan: &Plan,
+    housing: &Housing,
+    stay: &Stay,
+    conflicted: bool,
+    lang: Lang,
+) {
+    ui.strong(plan.subject_label(stay.subject, lang));
     ui.label(format!("🏠 {}", housing.name));
     ui.separator();
-    ui.label(format!("From:   {}", stay.arrival.format("%a %d %b %Y")));
-    ui.label(format!("To:     {}", stay.departure.format("%a %d %b %Y")));
+    ui.label(format!(
+        "{} {}",
+        tr(lang, "From:"),
+        stay.arrival.format("%a %d %b %Y")
+    ));
+    ui.label(format!(
+        "{} {}",
+        tr(lang, "To:"),
+        stay.departure.format("%a %d %b %Y")
+    ));
     let nights = (stay.departure - stay.arrival).num_days().max(0);
-    ui.label(format!("Nights: {nights}"));
+    ui.label(format!("{} {nights}", tr(lang, "Nights:")));
     if let Subject::Group(_) = stay.subject {
-        ui.label(format!("People: {}", plan.subject_headcount(stay.subject)));
+        ui.label(format!(
+            "{} {}",
+            tr(lang, "People:"),
+            plan.subject_headcount(stay.subject)
+        ));
     }
     if conflicted {
-        ui.colored_label(SUBJECT_CONFLICT, "⚠ Also booked elsewhere at the same time");
+        ui.colored_label(
+            SUBJECT_CONFLICT,
+            tr(lang, "⚠ Also booked elsewhere at the same time"),
+        );
     }
 }
 

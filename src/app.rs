@@ -4,6 +4,7 @@ use chrono::{Datelike, Duration, NaiveDate};
 
 use std::collections::HashSet;
 
+use crate::i18n::{tr, Lang};
 use crate::licenses;
 use crate::model::{Group, Housing, Id, Person, Plan, Stay, Subject, GROUP_PALETTE};
 use crate::timeline;
@@ -21,6 +22,9 @@ enum Tab {
 /// Kept as the original value so plans saved before the project rename still
 /// load (only the migrated storage directory changed).
 const STORAGE_KEY: &str = "hplan_plan";
+
+/// Storage key for the selected interface language.
+const LANG_KEY: &str = "hplan_lang";
 
 /// Pixel width of a single day column, clamped to this range (shared by the
 /// zoom slider and the Ctrl/Cmd + wheel / pinch zoom).
@@ -43,6 +47,8 @@ pub struct PlannerApp {
     licenses_open: bool,
     /// App logo texture, shown in the About window.
     logo: Option<egui::TextureHandle>,
+    /// Interface language (persisted).
+    lang: Lang,
     // --- Tab navigation + per-tab selection (not persisted) ---
     active_tab: Tab,
     selected_group: Option<Id>,
@@ -62,6 +68,12 @@ impl PlannerApp {
             .earliest_arrival()
             .map(|d| d - Duration::days(2))
             .unwrap_or(today);
+
+        // Persisted language, defaulting to the system locale on first run.
+        let lang = cc
+            .storage
+            .and_then(|s| eframe::get_value::<Lang>(s, LANG_KEY))
+            .unwrap_or_else(Lang::from_env);
 
         // Decode the embedded icon PNG into a texture for the About window
         // (reuses eframe's PNG decoder, so no extra image dependency).
@@ -86,6 +98,7 @@ impl PlannerApp {
             status: String::new(),
             licenses_open: false,
             logo,
+            lang,
             active_tab: Tab::Overview,
             selected_group: None,
             selected_person: None,
@@ -97,18 +110,20 @@ impl PlannerApp {
 impl eframe::App for PlannerApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, STORAGE_KEY, &self.plan);
+        eframe::set_value(storage, LANG_KEY, &self.lang);
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.top_bar(ui);
         self.licenses_window(ui.ctx());
 
+        let lang = self.lang;
         egui::Panel::top("tabs").show_inside(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.selectable_value(&mut self.active_tab, Tab::Overview, "📊 Overview");
-                ui.selectable_value(&mut self.active_tab, Tab::Groups, "👥 Groups");
-                ui.selectable_value(&mut self.active_tab, Tab::Persons, "🧍 Persons");
-                ui.selectable_value(&mut self.active_tab, Tab::Housings, "🏠 Housings");
+                ui.selectable_value(&mut self.active_tab, Tab::Overview, tr(lang, "📊 Overview"));
+                ui.selectable_value(&mut self.active_tab, Tab::Groups, tr(lang, "👥 Groups"));
+                ui.selectable_value(&mut self.active_tab, Tab::Persons, tr(lang, "🧍 Persons"));
+                ui.selectable_value(&mut self.active_tab, Tab::Housings, tr(lang, "🏠 Housings"));
             });
         });
 
@@ -179,42 +194,46 @@ impl PlannerApp {
     }
 
     fn top_bar(&mut self, ui: &mut egui::Ui) {
+        let lang = self.lang;
         egui::Panel::top("top").show_inside(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.heading("Housing Planner");
                 ui.separator();
 
-                ui.label("From:");
+                ui.label(tr(lang, "From:"));
                 date_edit(ui, &mut self.view_start);
 
-                ui.label("Days:");
+                ui.label(tr(lang, "Days:"));
                 ui.add(
                     egui::DragValue::new(&mut self.days_visible)
                         .range(7..=365)
                         .speed(1.0),
                 );
 
-                ui.label("Zoom:");
+                ui.label(tr(lang, "Zoom:"));
                 ui.add(
                     egui::Slider::new(&mut self.day_width, MIN_DAY_WIDTH..=MAX_DAY_WIDTH)
                         .show_value(false),
                 )
-                .on_hover_text("Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline");
+                .on_hover_text(tr(
+                    lang,
+                    "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline",
+                ));
 
-                if ui.button("Today").clicked() {
+                if ui.button(tr(lang, "Today")).clicked() {
                     self.view_start = chrono::Local::now().date_naive();
                 }
-                if ui.button("Fit to stays").clicked() {
+                if ui.button(tr(lang, "Fit to stays")).clicked() {
                     if let Some(first) = self.plan.earliest_arrival() {
                         self.view_start = first - Duration::days(2);
                     }
                 }
 
                 ui.separator();
-                if ui.button("💾 Save…").clicked() {
+                if ui.button(tr(lang, "💾 Save…")).clicked() {
                     self.save_to_file();
                 }
-                if ui.button("📂 Load…").clicked() {
+                if ui.button(tr(lang, "📂 Load…")).clicked() {
                     self.load_from_file();
                 }
 
@@ -224,9 +243,18 @@ impl PlannerApp {
                 }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("ℹ About").clicked() {
+                    if ui.button(tr(lang, "ℹ About")).clicked() {
                         self.licenses_open = true;
                     }
+                    egui::ComboBox::from_id_salt("lang")
+                        .selected_text(format!("🌐 {}", self.lang.label()))
+                        .show_ui(ui, |ui| {
+                            for l in Lang::ALL {
+                                ui.selectable_value(&mut self.lang, l, l.label());
+                            }
+                        })
+                        .response
+                        .on_hover_text(tr(lang, "Language"));
                 });
             });
         });
@@ -238,18 +266,20 @@ impl PlannerApp {
         // Clone the (Arc-backed) handle so the closure doesn't borrow `self`,
         // which `.open(&mut self.licenses_open)` already borrows mutably.
         let logo = self.logo.clone();
-        egui::Window::new("About / Licenses")
+        let lang = self.lang;
+        egui::Window::new(tr(lang, "About / Licenses"))
             .open(&mut self.licenses_open)
             .resizable(true)
             .default_size([720.0, 560.0])
-            .show(ctx, |ui| about_contents(ui, logo.as_ref()));
+            .show(ctx, |ui| about_contents(ui, logo.as_ref(), lang));
     }
 
     /// Prompt for a path and write the current plan as JSON.
     #[cfg(not(target_os = "android"))]
     fn save_to_file(&mut self) {
+        let lang = self.lang;
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("Housing Planner plan", &["json"])
+            .add_filter(tr(lang, "Housing Planner plan"), &["json"])
             .set_file_name("plan.json")
             .save_file()
         else {
@@ -257,18 +287,19 @@ impl PlannerApp {
         };
         match serde_json::to_string_pretty(&self.plan) {
             Ok(json) => match std::fs::write(&path, json) {
-                Ok(()) => self.status = format!("Saved → {}", path.display()),
-                Err(e) => self.status = format!("Save failed: {e}"),
+                Ok(()) => self.status = format!("{} {}", tr(lang, "Saved →"), path.display()),
+                Err(e) => self.status = format!("{} {e}", tr(lang, "Save failed:")),
             },
-            Err(e) => self.status = format!("Encode failed: {e}"),
+            Err(e) => self.status = format!("{} {e}", tr(lang, "Encode failed:")),
         }
     }
 
     /// Prompt for a path and replace the current plan with one loaded from JSON.
     #[cfg(not(target_os = "android"))]
     fn load_from_file(&mut self) {
+        let lang = self.lang;
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("Housing Planner plan", &["json"])
+            .add_filter(tr(lang, "Housing Planner plan"), &["json"])
             .pick_file()
         else {
             return; // user cancelled
@@ -276,7 +307,7 @@ impl PlannerApp {
         let text = match std::fs::read_to_string(&path) {
             Ok(t) => t,
             Err(e) => {
-                self.status = format!("Read failed: {e}");
+                self.status = format!("{} {e}", tr(lang, "Read failed:"));
                 return;
             }
         };
@@ -288,9 +319,9 @@ impl PlannerApp {
                     .map(|d| d - Duration::days(2))
                     .unwrap_or_else(|| chrono::Local::now().date_naive());
                 self.plan = plan;
-                self.status = format!("Loaded ← {}", path.display());
+                self.status = format!("{} {}", tr(lang, "Loaded ←"), path.display());
             }
-            Err(e) => self.status = format!("Parse failed: {e}"),
+            Err(e) => self.status = format!("{} {e}", tr(lang, "Parse failed:")),
         }
     }
 
@@ -298,11 +329,11 @@ impl PlannerApp {
     // for now these are no-ops there (auto-persistence still applies).
     #[cfg(target_os = "android")]
     fn save_to_file(&mut self) {
-        self.status = "File save is not available on Android yet.".to_owned();
+        self.status = tr(self.lang, "File save is not available on Android yet.").to_owned();
     }
     #[cfg(target_os = "android")]
     fn load_from_file(&mut self) {
-        self.status = "File load is not available on Android yet.".to_owned();
+        self.status = tr(self.lang, "File load is not available on Android yet.").to_owned();
     }
 
     /// Central timeline for the active tab: render the filtered timeline, then
@@ -327,6 +358,7 @@ impl PlannerApp {
                     self.view_start,
                     self.days_visible,
                     self.day_width,
+                    self.lang,
                     &filter,
                 );
                 self.handle_zoom(ui, &response);
@@ -336,14 +368,18 @@ impl PlannerApp {
     }
 
     fn overview_tab(&mut self, ui: &mut egui::Ui) {
+        let lang = self.lang;
         if self.plan.is_empty() {
             egui::CentralPanel::default().show_inside(ui, |ui| {
                 ui.vertical_centered(|ui| {
                     ui.add_space(40.0);
-                    ui.heading("Welcome to Housing Planner");
-                    ui.label("Add housings, groups and people in the tabs above —");
+                    ui.heading(tr(lang, "Welcome to Housing Planner"));
+                    ui.label(tr(
+                        lang,
+                        "Add housings, groups and people in the tabs above —",
+                    ));
                     ui.add_space(6.0);
-                    if ui.button("📋 Load example data").clicked() {
+                    if ui.button(tr(lang, "📋 Load example data")).clicked() {
                         self.plan.load_sample();
                     }
                 });
@@ -355,11 +391,12 @@ impl PlannerApp {
             ui,
             &housings,
             &|_| true,
-            "Add a housing in the Housings tab to start planning.",
+            tr(lang, "Add a housing in the Housings tab to start planning."),
         );
     }
 
     fn groups_tab(&mut self, ui: &mut egui::Ui) {
+        let lang = self.lang;
         egui::Panel::left("groups_panel")
             .resizable(true)
             .default_size(340.0)
@@ -381,14 +418,20 @@ impl PlannerApp {
                 .map(|h| h.id)
                 .collect();
             let include = move |s: &Stay| s.subject == Subject::Group(gid);
-            self.timeline_panel(ui, &housings, &include, "No stays for this group yet.");
+            self.timeline_panel(
+                ui,
+                &housings,
+                &include,
+                tr(lang, "No stays for this group yet."),
+            );
         } else {
-            egui::CentralPanel::default()
-                .show_inside(ui, |ui| centered_hint(ui, "Select or create a group."));
+            let hint = tr(lang, "Select or create a group.");
+            egui::CentralPanel::default().show_inside(ui, |ui| centered_hint(ui, hint));
         }
     }
 
     fn persons_tab(&mut self, ui: &mut egui::Ui) {
+        let lang = self.lang;
         egui::Panel::left("persons_panel")
             .resizable(true)
             .default_size(340.0)
@@ -418,14 +461,20 @@ impl PlannerApp {
                 .map(|h| h.id)
                 .collect();
             let include = move |s: &Stay| included.contains(&s.id);
-            self.timeline_panel(ui, &housings, &include, "No stays for this person yet.");
+            self.timeline_panel(
+                ui,
+                &housings,
+                &include,
+                tr(lang, "No stays for this person yet."),
+            );
         } else {
-            egui::CentralPanel::default()
-                .show_inside(ui, |ui| centered_hint(ui, "Select or create a person."));
+            let hint = tr(lang, "Select or create a person.");
+            egui::CentralPanel::default().show_inside(ui, |ui| centered_hint(ui, hint));
         }
     }
 
     fn housings_tab(&mut self, ui: &mut egui::Ui) {
+        let lang = self.lang;
         egui::Panel::left("housings_panel")
             .resizable(true)
             .default_size(340.0)
@@ -435,14 +484,20 @@ impl PlannerApp {
 
         if let Some(hid) = self.selected_housing {
             let housings = [hid];
-            self.timeline_panel(ui, &housings, &|_| true, "No stays in this housing yet.");
+            self.timeline_panel(
+                ui,
+                &housings,
+                &|_| true,
+                tr(lang, "No stays in this housing yet."),
+            );
         } else {
-            egui::CentralPanel::default()
-                .show_inside(ui, |ui| centered_hint(ui, "Select or create a housing."));
+            let hint = tr(lang, "Select or create a housing.");
+            egui::CentralPanel::default().show_inside(ui, |ui| centered_hint(ui, hint));
         }
     }
 
     fn groups_editor(&mut self, ui: &mut egui::Ui) {
+        let lang = self.lang;
         let Self {
             plan,
             selected_group: selected,
@@ -454,8 +509,8 @@ impl PlannerApp {
         ensure_selection(selected, &ids);
 
         ui.horizontal(|ui| {
-            entity_selector(ui, "Group", selected, &items);
-            if ui.button("➕ New").clicked() {
+            entity_selector(ui, tr(lang, "Group"), selected, &items);
+            if ui.button(tr(lang, "➕ New")).clicked() {
                 let id = plan.new_id();
                 let color = GROUP_PALETTE[plan.groups.len() % GROUP_PALETTE.len()];
                 plan.groups.push(Group {
@@ -468,7 +523,7 @@ impl PlannerApp {
         });
 
         let Some(gid) = *selected else {
-            ui.label("No groups yet — add one.");
+            ui.label(tr(lang, "No groups yet — add one."));
             return;
         };
         ui.separator();
@@ -479,7 +534,7 @@ impl PlannerApp {
                 ui.add(egui::TextEdit::singleline(&mut group.name).desired_width(200.0));
             });
         }
-        if ui.button("🗑 Delete group").clicked() {
+        if ui.button(tr(lang, "🗑 Delete group")).clicked() {
             plan.groups.retain(|g| g.id != gid);
             for p in &mut plan.persons {
                 if p.group == Some(gid) {
@@ -492,7 +547,7 @@ impl PlannerApp {
         }
 
         ui.separator();
-        ui.label("Members:");
+        ui.label(tr(lang, "Members:"));
         let members: Vec<(Id, String)> = plan
             .persons
             .iter()
@@ -509,7 +564,7 @@ impl PlannerApp {
             });
         }
         if members.is_empty() {
-            ui.label(egui::RichText::new("(no members)").weak().small());
+            ui.label(egui::RichText::new(tr(lang, "(no members)")).weak().small());
         }
         if let Some(pid) = detach {
             if let Some(p) = plan.persons.iter_mut().find(|p| p.id == pid) {
@@ -519,7 +574,7 @@ impl PlannerApp {
         ui.horizontal(|ui| {
             let mut attach: Option<Id> = None;
             egui::ComboBox::from_id_salt("add_member")
-                .selected_text("➕ Add existing…")
+                .selected_text(tr(lang, "➕ Add existing…"))
                 .show_ui(ui, |ui| {
                     for p in plan.persons.iter().filter(|p| p.group != Some(gid)) {
                         if ui.selectable_label(false, p.name.as_str()).clicked() {
@@ -532,7 +587,7 @@ impl PlannerApp {
                     p.group = Some(gid);
                 }
             }
-            if ui.button("➕ New person").clicked() {
+            if ui.button(tr(lang, "➕ New person")).clicked() {
                 let id = plan.new_id();
                 plan.persons.push(Person {
                     id,
@@ -543,12 +598,20 @@ impl PlannerApp {
         });
 
         ui.separator();
-        ui.label("Stays:");
-        stay_editor(ui, plan, |s| s.subject == Subject::Group(gid), false, true);
-        add_stay_button(ui, plan, Some(Subject::Group(gid)), None);
+        ui.label(tr(lang, "Stays:"));
+        stay_editor(
+            ui,
+            plan,
+            lang,
+            |s| s.subject == Subject::Group(gid),
+            false,
+            true,
+        );
+        add_stay_button(ui, plan, lang, Some(Subject::Group(gid)), None);
     }
 
     fn persons_editor(&mut self, ui: &mut egui::Ui) {
+        let lang = self.lang;
         let Self {
             plan,
             selected_person: selected,
@@ -564,8 +627,8 @@ impl PlannerApp {
         ensure_selection(selected, &ids);
 
         ui.horizontal(|ui| {
-            entity_selector(ui, "Person", selected, &items);
-            if ui.button("➕ New").clicked() {
+            entity_selector(ui, tr(lang, "Person"), selected, &items);
+            if ui.button(tr(lang, "➕ New")).clicked() {
                 let id = plan.new_id();
                 plan.persons.push(Person {
                     id,
@@ -577,7 +640,7 @@ impl PlannerApp {
         });
 
         let Some(pid) = *selected else {
-            ui.label("No persons yet — add one.");
+            ui.label(tr(lang, "No persons yet — add one."));
             return;
         };
         ui.separator();
@@ -590,17 +653,17 @@ impl PlannerApp {
                 .group
                 .and_then(|gid| groups.iter().find(|(i, _)| *i == gid))
                 .map(|(_, n)| n.as_str())
-                .unwrap_or("— no group —");
-            egui::ComboBox::from_label("Group")
+                .unwrap_or_else(|| tr(lang, "— no group —"));
+            egui::ComboBox::from_label(tr(lang, "Group"))
                 .selected_text(current)
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut person.group, None, "— no group —");
+                    ui.selectable_value(&mut person.group, None, tr(lang, "— no group —"));
                     for (gid, name) in &groups {
                         ui.selectable_value(&mut person.group, Some(*gid), name);
                     }
                 });
         }
-        if ui.button("🗑 Delete person").clicked() {
+        if ui.button(tr(lang, "🗑 Delete person")).clicked() {
             plan.persons.retain(|p| p.id != pid);
             plan.stays.retain(|s| s.subject != Subject::Person(pid));
             *selected = None;
@@ -608,12 +671,20 @@ impl PlannerApp {
         }
 
         ui.separator();
-        ui.label("Stays (individual):");
-        stay_editor(ui, plan, |s| s.subject == Subject::Person(pid), false, true);
-        add_stay_button(ui, plan, Some(Subject::Person(pid)), None);
+        ui.label(tr(lang, "Stays (individual):"));
+        stay_editor(
+            ui,
+            plan,
+            lang,
+            |s| s.subject == Subject::Person(pid),
+            false,
+            true,
+        );
+        add_stay_button(ui, plan, lang, Some(Subject::Person(pid)), None);
     }
 
     fn housings_editor(&mut self, ui: &mut egui::Ui) {
+        let lang = self.lang;
         let Self {
             plan,
             selected_housing: selected,
@@ -629,8 +700,8 @@ impl PlannerApp {
         ensure_selection(selected, &ids);
 
         ui.horizontal(|ui| {
-            entity_selector(ui, "Housing", selected, &items);
-            if ui.button("➕ New").clicked() {
+            entity_selector(ui, tr(lang, "Housing"), selected, &items);
+            if ui.button(tr(lang, "➕ New")).clicked() {
                 let id = plan.new_id();
                 plan.housings.push(Housing {
                     id,
@@ -643,7 +714,7 @@ impl PlannerApp {
         });
 
         let Some(hid) = *selected else {
-            ui.label("No housings yet — add one.");
+            ui.label(tr(lang, "No housings yet — add one."));
             return;
         };
         ui.separator();
@@ -651,17 +722,17 @@ impl PlannerApp {
         if let Some(h) = plan.housings.iter_mut().find(|h| h.id == hid) {
             ui.add(egui::TextEdit::singleline(&mut h.name).desired_width(200.0));
             ui.horizontal(|ui| {
-                ui.label("Capacity");
+                ui.label(tr(lang, "Capacity"));
                 ui.add(egui::DragValue::new(&mut h.capacity).range(0..=999));
             });
-            ui.label("Notes:");
+            ui.label(tr(lang, "Notes:"));
             ui.add(
                 egui::TextEdit::multiline(&mut h.notes)
                     .desired_rows(2)
                     .desired_width(220.0),
             );
         }
-        if ui.button("🗑 Delete housing").clicked() {
+        if ui.button(tr(lang, "🗑 Delete housing")).clicked() {
             plan.housings.retain(|h| h.id != hid);
             plan.stays.retain(|s| s.housing != hid);
             *selected = None;
@@ -669,9 +740,9 @@ impl PlannerApp {
         }
 
         ui.separator();
-        ui.label("Stays:");
-        stay_editor(ui, plan, |s| s.housing == hid, true, false);
-        add_stay_button(ui, plan, None, Some(hid));
+        ui.label(tr(lang, "Stays:"));
+        stay_editor(ui, plan, lang, |s| s.housing == hid, true, false);
+        add_stay_button(ui, plan, lang, None, Some(hid));
     }
 }
 
@@ -713,32 +784,36 @@ fn days_in_month(year: i32, month: u32) -> u32 {
 }
 
 /// Contents of the About / Licenses window.
-fn about_contents(ui: &mut egui::Ui, logo: Option<&egui::TextureHandle>) {
+fn about_contents(ui: &mut egui::Ui, logo: Option<&egui::TextureHandle>, lang: Lang) {
     ui.horizontal(|ui| {
         if let Some(tex) = logo {
             ui.add(egui::Image::new((tex.id(), egui::vec2(72.0, 72.0))));
         }
         ui.vertical(|ui| {
             ui.heading("Housing Planner");
-            ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
-            ui.label("Plan who stays where, and when.");
+            ui.label(format!(
+                "{} {}",
+                tr(lang, "Version"),
+                env!("CARGO_PKG_VERSION")
+            ));
+            ui.label(tr(lang, "Plan who stays where, and when."));
         });
     });
     ui.add_space(6.0);
 
-    if ui.button("📋 Copy dependency licenses").clicked() {
+    if ui.button(tr(lang, "📋 Copy dependency licenses")).clicked() {
         ui.ctx()
             .copy_text(licenses::dependency_licenses().to_owned());
     }
     ui.separator();
 
-    egui::CollapsingHeader::new("This application")
+    egui::CollapsingHeader::new(tr(lang, "This application"))
         .default_open(false)
         .show(ui, |ui| {
             ui.label(egui::RichText::new(licenses::MAIN_LICENSE).small());
         });
 
-    egui::CollapsingHeader::new("Third-party dependencies")
+    egui::CollapsingHeader::new(tr(lang, "Third-party dependencies"))
         .default_open(true)
         .show(ui, |ui| {
             // The license dump is large (tens of thousands of lines), so render
@@ -825,6 +900,7 @@ fn default_subject(plan: &Plan) -> Option<Subject> {
 fn add_stay_button(
     ui: &mut egui::Ui,
     plan: &mut Plan,
+    lang: Lang,
     subject: Option<Subject>,
     housing: Option<Id>,
 ) {
@@ -832,7 +908,7 @@ fn add_stay_button(
     let housing = housing.or_else(|| plan.housings.first().map(|h| h.id));
     let enabled = subject.is_some() && housing.is_some();
     ui.add_enabled_ui(enabled, |ui| {
-        if ui.button("➕ Add stay").clicked() {
+        if ui.button(tr(lang, "➕ Add stay")).clicked() {
             let id = plan.new_id();
             let today = chrono::Local::now().date_naive();
             plan.stays.push(Stay {
@@ -846,7 +922,7 @@ fn add_stay_button(
     });
     if !enabled {
         ui.label(
-            egui::RichText::new("Add a housing and a person/group first.")
+            egui::RichText::new(tr(lang, "Add a housing and a person/group first."))
                 .small()
                 .weak(),
         );
@@ -858,6 +934,7 @@ fn add_stay_button(
 fn stay_editor(
     ui: &mut egui::Ui,
     plan: &mut Plan,
+    lang: Lang,
     matches: impl Fn(&Stay) -> bool,
     edit_subject: bool,
     edit_housing: bool,
@@ -873,6 +950,7 @@ fn stay_editor(
         .map(|p| (p.id, p.name.clone()))
         .collect();
     let groups: Vec<(Id, String)> = plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
+    let group_suffix = tr(lang, "(group)");
 
     let subject_label = |s: Subject| -> String {
         match s {
@@ -884,7 +962,7 @@ fn stay_editor(
             Subject::Group(id) => groups
                 .iter()
                 .find(|(i, _)| *i == id)
-                .map(|(_, n)| format!("{} (group)", n))
+                .map(|(_, n)| format!("{} {}", n, group_suffix))
                 .unwrap_or_else(|| "<group>".into()),
         }
     };
@@ -921,7 +999,7 @@ fn stay_editor(
                                     ui.selectable_value(
                                         &mut stay.subject,
                                         Subject::Group(*id),
-                                        format!("{} (group)", name),
+                                        format!("{} {}", name, group_suffix),
                                     );
                                 }
                             });
@@ -951,7 +1029,7 @@ fn stay_editor(
         });
     }
     if !any {
-        ui.label(egui::RichText::new("(no stays)").weak().small());
+        ui.label(egui::RichText::new(tr(lang, "(no stays)")).weak().small());
     }
     if let Some(id) = delete {
         plan.stays.retain(|s| s.id != id);
