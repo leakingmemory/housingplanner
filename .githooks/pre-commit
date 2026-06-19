@@ -1,0 +1,16 @@
+#!/bin/sh
+# Reject commits that aren't `cargo fmt` clean — the master.yml CI workflow runs
+# `cargo fmt -- --check` on every push/PR to master, so catch it here first.
+#
+# Enable for this clone with:  git config core.hooksPath .githooks
+
+if ! command -v cargo >/dev/null 2>&1; then
+    echo "pre-commit: cargo not found; skipping fmt check" >&2
+    exit 0
+fi
+
+if ! cargo fmt --all -- --check; then
+    echo >&2
+    echo "pre-commit: code is not formatted. Run 'cargo fmt', re-stage, and commit again." >&2
+    exit 1
+fi

@@ -449,8 +449,7 @@ impl PlannerApp {
             ..
         } = self;
 
-        let items: Vec<(Id, String)> =
-            plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
+        let items: Vec<(Id, String)> = plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
         let ids: Vec<Id> = items.iter().map(|(i, _)| *i).collect();
         ensure_selection(selected, &ids);
 
@@ -556,8 +555,11 @@ impl PlannerApp {
             ..
         } = self;
 
-        let items: Vec<(Id, String)> =
-            plan.persons.iter().map(|p| (p.id, p.name.clone())).collect();
+        let items: Vec<(Id, String)> = plan
+            .persons
+            .iter()
+            .map(|p| (p.id, p.name.clone()))
+            .collect();
         let ids: Vec<Id> = items.iter().map(|(i, _)| *i).collect();
         ensure_selection(selected, &ids);
 
@@ -618,8 +620,11 @@ impl PlannerApp {
             ..
         } = self;
 
-        let items: Vec<(Id, String)> =
-            plan.housings.iter().map(|h| (h.id, h.name.clone())).collect();
+        let items: Vec<(Id, String)> = plan
+            .housings
+            .iter()
+            .map(|h| (h.id, h.name.clone()))
+            .collect();
         let ids: Vec<Id> = items.iter().map(|(i, _)| *i).collect();
         ensure_selection(selected, &ids);
 
@@ -669,7 +674,6 @@ impl PlannerApp {
         add_stay_button(ui, plan, None, Some(hid));
     }
 }
-
 
 /// Compact year / month / day editor for a [`NaiveDate`].
 ///
@@ -818,7 +822,12 @@ fn default_subject(plan: &Plan) -> Option<Subject> {
 
 /// "Add stay" button. `subject`/`housing` pin those fields when `Some`, otherwise
 /// a sensible default is chosen; disabled (with a hint) if no default exists.
-fn add_stay_button(ui: &mut egui::Ui, plan: &mut Plan, subject: Option<Subject>, housing: Option<Id>) {
+fn add_stay_button(
+    ui: &mut egui::Ui,
+    plan: &mut Plan,
+    subject: Option<Subject>,
+    housing: Option<Id>,
+) {
     let subject = subject.or_else(|| default_subject(plan));
     let housing = housing.or_else(|| plan.housings.first().map(|h| h.id));
     let enabled = subject.is_some() && housing.is_some();
@@ -853,10 +862,16 @@ fn stay_editor(
     edit_subject: bool,
     edit_housing: bool,
 ) {
-    let housings: Vec<(Id, String)> =
-        plan.housings.iter().map(|h| (h.id, h.name.clone())).collect();
-    let persons: Vec<(Id, String)> =
-        plan.persons.iter().map(|p| (p.id, p.name.clone())).collect();
+    let housings: Vec<(Id, String)> = plan
+        .housings
+        .iter()
+        .map(|h| (h.id, h.name.clone()))
+        .collect();
+    let persons: Vec<(Id, String)> = plan
+        .persons
+        .iter()
+        .map(|p| (p.id, p.name.clone()))
+        .collect();
     let groups: Vec<(Id, String)> = plan.groups.iter().map(|g| (g.id, g.name.clone())).collect();
 
     let subject_label = |s: Subject| -> String {
@@ -896,7 +911,11 @@ fn stay_editor(
                             .selected_text(subject_label(stay.subject))
                             .show_ui(ui, |ui| {
                                 for (id, name) in &persons {
-                                    ui.selectable_value(&mut stay.subject, Subject::Person(*id), name);
+                                    ui.selectable_value(
+                                        &mut stay.subject,
+                                        Subject::Person(*id),
+                                        name,
+                                    );
                                 }
                                 for (id, name) in &groups {
                                     ui.selectable_value(

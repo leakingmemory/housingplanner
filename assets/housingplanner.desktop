@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Housing Planner
+GenericName=Stay Planner
+Comment=Plan who stays where, and when
+Exec=housingplanner
+Icon=housingplanner
+Terminal=false
+Categories=Office;ProjectManagement;
+Keywords=housing;planning;timeline;stays;accommodation;volunteer;
+StartupNotify=true
+StartupWMClass=housingplanner

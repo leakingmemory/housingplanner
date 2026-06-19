@@ -180,7 +180,10 @@ impl Plan {
 
     /// The persons that belong to a group, in declaration order.
     pub fn persons_in_group(&self, gid: Id) -> Vec<&Person> {
-        self.persons.iter().filter(|p| p.group == Some(gid)).collect()
+        self.persons
+            .iter()
+            .filter(|p| p.group == Some(gid))
+            .collect()
     }
 
     /// Ids of stays that put the same person in more than one housing at the
@@ -525,16 +528,45 @@ mod tests {
         let d = |n| chrono::NaiveDate::from_ymd_opt(2026, 1, n).unwrap();
         let mut plan = Plan::default();
         let h = plan.new_id();
-        plan.housings.push(Housing { id: h, name: "A".into(), capacity: 9, notes: String::new() });
+        plan.housings.push(Housing {
+            id: h,
+            name: "A".into(),
+            capacity: 9,
+            notes: String::new(),
+        });
         let g = plan.new_id();
-        plan.groups.push(Group { id: g, name: "G".into(), color: [1, 2, 3] });
+        plan.groups.push(Group {
+            id: g,
+            name: "G".into(),
+            color: [1, 2, 3],
+        });
         let member = plan.new_id();
         let outsider = plan.new_id();
-        plan.persons.push(Person { id: member, name: "M".into(), group: Some(g) });
-        plan.persons.push(Person { id: outsider, name: "O".into(), group: None });
+        plan.persons.push(Person {
+            id: member,
+            name: "M".into(),
+            group: Some(g),
+        });
+        plan.persons.push(Person {
+            id: outsider,
+            name: "O".into(),
+            group: None,
+        });
 
-        let own = Stay { id: plan.new_id(), subject: Subject::Person(member), housing: h, arrival: d(1), departure: d(3) };
-        let grp = Stay { id: plan.new_id(), subject: Subject::Group(g), housing: h, arrival: d(1), departure: d(3) };
+        let own = Stay {
+            id: plan.new_id(),
+            subject: Subject::Person(member),
+            housing: h,
+            arrival: d(1),
+            departure: d(3),
+        };
+        let grp = Stay {
+            id: plan.new_id(),
+            subject: Subject::Group(g),
+            housing: h,
+            arrival: d(1),
+            departure: d(3),
+        };
 
         assert!(plan.stay_includes_person(&own, member));
         assert!(!plan.stay_includes_person(&own, outsider));

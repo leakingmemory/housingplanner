@@ -142,6 +142,31 @@ python3 -c "from PIL import Image; Image.open('icon-256.png').save('icon.ico', \
 The same PNGs are the source for Android launcher densities (wiring up
 `cargo-apk` mipmaps is left for when the Android build is set up).
 
+### Desktop launcher (manual install on Linux)
+
+`assets/housingplanner.desktop` is a freedesktop entry for a non-snap install
+(the snap ships its own under `snap/gui/`). After putting the `housingplanner`
+binary on your `PATH`:
+
+```sh
+install -Dm644 assets/housingplanner.desktop ~/.local/share/applications/housingplanner.desktop
+install -Dm644 assets/icon-256.png ~/.local/share/icons/hicolor/256x256/apps/housingplanner.png
+update-desktop-database ~/.local/share/applications 2>/dev/null || true
+```
+
+The window sets its app id to `housingplanner` (matching the file's
+`StartupWMClass`), so the launcher icon associates with the running window.
+
+## Development
+
+Code is formatted with `cargo fmt` and CI (`.github/workflows/master.yml`) runs
+`cargo fmt -- --check` on every push/PR to `master`. Enable the bundled
+pre-commit hook so unformatted commits are blocked locally:
+
+```sh
+git config core.hooksPath .githooks
+```
+
 ## Android (optional, extra toolchain required)
 
 The code is already Android-ready: app logic is in the library crate and

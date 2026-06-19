@@ -43,8 +43,11 @@ pub fn show(
     filter: &Filter,
 ) -> egui::Response {
     // Resolve the requested housing ids to rows, skipping any that vanished.
-    let row_housings: Vec<&Housing> =
-        filter.housings.iter().filter_map(|id| plan.housing(*id)).collect();
+    let row_housings: Vec<&Housing> = filter
+        .housings
+        .iter()
+        .filter_map(|id| plan.housing(*id))
+        .collect();
     let rows = row_housings.len().max(1);
     let plot_width = days_visible as f32 * day_width;
     let total_size = Vec2::new(
@@ -323,10 +326,7 @@ fn stay_tooltip(ui: &mut egui::Ui, plan: &Plan, housing: &Housing, stay: &Stay, 
         ui.label(format!("People: {}", plan.subject_headcount(stay.subject)));
     }
     if conflicted {
-        ui.colored_label(
-            SUBJECT_CONFLICT,
-            "⚠ Also booked elsewhere at the same time",
-        );
+        ui.colored_label(SUBJECT_CONFLICT, "⚠ Also booked elsewhere at the same time");
     }
 }
 

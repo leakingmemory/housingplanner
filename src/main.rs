@@ -22,6 +22,9 @@ fn main() -> eframe::Result {
             .with_inner_size([1280.0, 800.0])
             .with_min_inner_size([800.0, 480.0])
             .with_icon(std::sync::Arc::new(icon))
+            // Match the .desktop file name / StartupWMClass so the launcher icon
+            // associates with the running window.
+            .with_app_id("housingplanner")
             .with_title("Housing Planner"),
         ..Default::default()
     };
