@@ -15,6 +15,7 @@ pub enum Lang {
     NorwegianNynorsk,
     NorthernSami,
     Danish,
+    Ukrainian,
 }
 
 impl Default for Lang {
@@ -25,13 +26,14 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 6] = [
+    pub const ALL: [Lang; 7] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
         Lang::NorwegianNynorsk,
         Lang::NorthernSami,
         Lang::Danish,
+        Lang::Ukrainian,
     ];
 
     /// Native name shown in the language picker.
@@ -43,6 +45,7 @@ impl Lang {
             Lang::NorwegianNynorsk => "Norsk nynorsk",
             Lang::NorthernSami => "Davvisámegiella",
             Lang::Danish => "Dansk",
+            Lang::Ukrainian => "Українська",
         }
     }
 
@@ -63,6 +66,8 @@ impl Lang {
             Lang::NorthernSami
         } else if v.starts_with("da") {
             Lang::Danish
+        } else if v.starts_with("uk") {
+            Lang::Ukrainian
         } else {
             Lang::English
         }
@@ -78,6 +83,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::NorwegianNynorsk => nn(en),
         Lang::NorthernSami => se(en),
         Lang::Danish => da(en),
+        Lang::Ukrainian => uk(en),
     }
 }
 
@@ -623,6 +629,116 @@ fn da(en: &'static str) -> &'static str {
         "⚠ Also booked elsewhere at the same time" => "⚠ Også booket et andet sted samtidig",
         "<deleted person>" => "<slettet person>",
         "<deleted group>" => "<slettet gruppe>",
+
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Ukrainian translations, keyed by the English source string. Unknown strings
+/// fall back to English.
+fn uk(en: &'static str) -> &'static str {
+    match en {
+        // Tabs
+        "📊 Overview" => "📊 Огляд",
+        "👥 Groups" => "👥 Групи",
+        "🧍 Persons" => "🧍 Особи",
+        "🏠 Housings" => "🏠 Помешкання",
+
+        // Top bar
+        "From:" => "Від:",
+        "Days:" => "Дні:",
+        "Zoom:" => "Масштаб:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Або Ctrl/Cmd + прокручування (щипок на тачпаді) над шкалою часу"
+        }
+        "Today" => "Сьогодні",
+        "Fit to stays" => "Підлаштувати під перебування",
+        "💾 Save…" => "💾 Зберегти…",
+        "📂 Load…" => "📂 Відкрити…",
+        "ℹ About" => "ℹ Про програму",
+        "Language" => "Мова",
+
+        // Status messages (used as prefixes before a path / error)
+        "Saved →" => "Збережено →",
+        "Loaded ←" => "Завантажено ←",
+        "Save failed:" => "Не вдалося зберегти:",
+        "Encode failed:" => "Не вдалося закодувати:",
+        "Read failed:" => "Не вдалося прочитати:",
+        "Parse failed:" => "Не вдалося розібрати:",
+        "File save is not available on Android yet." => {
+            "Збереження у файл поки що недоступне на Android."
+        }
+        "File load is not available on Android yet." => {
+            "Завантаження з файлу поки що недоступне на Android."
+        }
+        "Housing Planner plan" => "План Housing Planner",
+
+        // About window
+        "About / Licenses" => "Про програму / Ліцензії",
+        "Version" => "Версія",
+        "Plan who stays where, and when." => "Плануйте, хто де живе і коли.",
+        "📋 Copy dependency licenses" => "📋 Копіювати ліцензії залежностей",
+        "This application" => "Ця програма",
+        "Third-party dependencies" => "Сторонні залежності",
+
+        // Overview tab
+        "Welcome to Housing Planner" => "Ласкаво просимо до Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Додавайте помешкання, групи та людей у вкладках вище —"
+        }
+        "📋 Load example data" => "📋 Завантажити приклад даних",
+        "Add a housing in the Housings tab to start planning." => {
+            "Додайте помешкання у вкладці «Помешкання», щоб почати планувати."
+        }
+
+        // Selectors / common
+        "Group" => "Група",
+        "Person" => "Особа",
+        "Housing" => "Помешкання",
+        "➕ New" => "➕ Створити",
+        "Stays:" => "Перебування:",
+        "Stays (individual):" => "Перебування (індивідуальні):",
+        "➕ Add stay" => "➕ Додати перебування",
+        "Add a housing and a person/group first." => "Спершу додайте помешкання та особу/групу.",
+        "(no stays)" => "(немає перебувань)",
+        "(group)" => "(група)",
+
+        // Groups tab
+        "No groups yet — add one." => "Груп ще немає — додайте одну.",
+        "🗑 Delete group" => "🗑 Видалити групу",
+        "Members:" => "Учасники:",
+        "(no members)" => "(немає учасників)",
+        "➕ Add existing…" => "➕ Додати наявного…",
+        "➕ New person" => "➕ Нова особа",
+        "Select or create a group." => "Виберіть або створіть групу.",
+        "No stays for this group yet." => "Для цієї групи ще немає перебувань.",
+
+        // Persons tab
+        "No persons yet — add one." => "Осіб ще немає — додайте одну.",
+        "— no group —" => "— без групи —",
+        "🗑 Delete person" => "🗑 Видалити особу",
+        "Select or create a person." => "Виберіть або створіть особу.",
+        "No stays for this person yet." => "Для цієї особи ще немає перебувань.",
+
+        // Housings tab
+        "No housings yet — add one." => "Помешкань ще немає — додайте одне.",
+        "Capacity" => "Місткість",
+        "Notes:" => "Нотатки:",
+        "🗑 Delete housing" => "🗑 Видалити помешкання",
+        "Select or create a housing." => "Виберіть або створіть помешкання.",
+        "No stays in this housing yet." => "У цьому помешканні ще немає перебувань.",
+
+        // Timeline
+        "cap" => "міст.",
+        "To:" => "До:",
+        "Nights:" => "Ночей:",
+        "People:" => "Людей:",
+        "⚠ Also booked elsewhere at the same time" => {
+            "⚠ Також заброньовано в іншому місці в той самий час"
+        }
+        "<deleted person>" => "<видалена особа>",
+        "<deleted group>" => "<видалена група>",
 
         // Fallback: English
         other => other,
