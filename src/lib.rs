@@ -4,6 +4,7 @@
 //! `android_main` export below. Both share the same [`app::PlannerApp`].
 
 pub mod app;
+pub mod licenses;
 pub mod model;
 pub mod timeline;
 

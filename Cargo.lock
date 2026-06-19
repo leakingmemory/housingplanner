@@ -1498,6 +1498,7 @@ dependencies = [
  "chrono",
  "eframe",
  "egui",
+ "flate2",
  "log",
  "rfd",
  "serde",

@@ -55,6 +55,31 @@ cargo run --release
   anchored on the date under the pointer. Plain scroll moves the housing list
   vertically.
 
+## Licenses / attribution
+
+MIT, BSD and most other dependency licenses require their full text and copyright
+notices to be distributed with the binary. Those notices are collected from the
+crate sources by [`cratelist`](https://github.com/leakingmemory/cratelist) into
+`DEPENDENCIES_LICENSE`, committed gzipped (`DEPENDENCIES_LICENSE.gz`), and
+**embedded into the binary** (decompressed on demand with `flate2`). View them via:
+
+- **In the app:** the **ℹ About** button (top-right) opens an About / Licenses
+  window with this app's license and the full third-party list. This is the only
+  attribution surface on Android.
+- **Command line:** `housingplanner --licenses` prints everything to stdout.
+  (On Windows release builds there is no attached console, so use the About
+  window there.)
+
+The `.github/workflows/update_licenses.yml` workflow regenerates the list on every
+`Cargo.lock` change. To regenerate manually:
+
+```sh
+cargo fetch
+CRATES_DIR=$(ls -d ~/.cargo/registry/src/index.crates.io-* | head -n1)
+cratelist Cargo.lock --license-contents "$CRATES_DIR" > DEPENDENCIES_LICENSE
+gzip -fk DEPENDENCIES_LICENSE
+```
+
 ## Android (optional, extra toolchain required)
 
 The code is already Android-ready: app logic is in the library crate and
@@ -80,6 +105,7 @@ cargo apk run --lib
 |------|---------|
 | `src/model.rs` | Data types (`Housing`, `Group`, `Person`, `Stay`, `Plan`) + helpers |
 | `src/timeline.rs` | The Gantt-style timeline rendering |
-| `src/app.rs` | eframe `App`: side-panel editors + central timeline |
-| `src/main.rs` | Desktop entry point |
+| `src/app.rs` | eframe `App`: side-panel editors + central timeline + About window |
+| `src/licenses.rs` | Embedded app + dependency license attribution |
+| `src/main.rs` | Desktop entry point (incl. `--licenses` flag) |
 | `src/lib.rs` | Shared library + Android `android_main` entry |

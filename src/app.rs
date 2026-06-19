@@ -2,6 +2,7 @@
 
 use chrono::{Datelike, Duration, NaiveDate};
 
+use crate::licenses;
 use crate::model::{Group, Housing, Id, Person, Plan, Stay, Subject, GROUP_PALETTE};
 use crate::timeline;
 
@@ -27,6 +28,8 @@ pub struct PlannerApp {
     zoom_remainder: f32,
     /// Transient status line (e.g. result of the last file save/load).
     status: String,
+    /// Whether the About / Licenses window is open.
+    licenses_open: bool,
 }
 
 impl PlannerApp {
@@ -50,6 +53,7 @@ impl PlannerApp {
             pan_remainder: 0.0,
             zoom_remainder: 0.0,
             status: String::new(),
+            licenses_open: false,
         }
     }
 }
@@ -61,6 +65,7 @@ impl eframe::App for PlannerApp {
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.top_bar(ui);
+        self.licenses_window(ui.ctx());
         self.side_panel(ui);
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
@@ -179,8 +184,24 @@ impl PlannerApp {
                     ui.separator();
                     ui.label(egui::RichText::new(&self.status).weak());
                 }
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button("ℹ About").clicked() {
+                        self.licenses_open = true;
+                    }
+                });
             });
         });
+    }
+
+    /// The About window: app info, this app's license, and the embedded
+    /// third-party dependency licenses (the cross-platform attribution surface).
+    fn licenses_window(&mut self, ctx: &egui::Context) {
+        egui::Window::new("About / Licenses")
+            .open(&mut self.licenses_open)
+            .resizable(true)
+            .default_size([720.0, 560.0])
+            .show(ctx, about_contents);
     }
 
     /// Prompt for a path and write the current plan as JSON.
@@ -513,4 +534,39 @@ fn days_in_month(year: i32, month: u32) -> u32 {
         .and_then(|first_of_next| first_of_next.pred_opt())
         .map(|last| last.day())
         .unwrap_or(28)
+}
+
+/// Contents of the About / Licenses window.
+fn about_contents(ui: &mut egui::Ui) {
+    ui.heading("Housing Planner");
+    ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
+    ui.label("Plan who stays where, and when.");
+    ui.add_space(6.0);
+
+    if ui.button("📋 Copy dependency licenses").clicked() {
+        ui.ctx().copy_text(licenses::dependency_licenses().to_owned());
+    }
+    ui.separator();
+
+    egui::CollapsingHeader::new("This application")
+        .default_open(false)
+        .show(ui, |ui| {
+            ui.label(egui::RichText::new(licenses::MAIN_LICENSE).small());
+        });
+
+    egui::CollapsingHeader::new("Third-party dependencies")
+        .default_open(true)
+        .show(ui, |ui| {
+            // The license dump is large (tens of thousands of lines), so render
+            // only the visible rows.
+            let lines = licenses::dependency_license_lines();
+            let row_h = ui.text_style_height(&egui::TextStyle::Monospace);
+            egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show_rows(ui, row_h, lines.len(), |ui, range| {
+                    for line in &lines[range] {
+                        ui.monospace(line);
+                    }
+                });
+        });
 }
