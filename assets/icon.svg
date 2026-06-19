@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Housing Planner icon: a house whose interior is a colored timeline. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4aa3df"/>
+      <stop offset="1" stop-color="#2e86c1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Blue rounded tile -->
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#tile)"/>
+
+  <!-- House: white roof + body. Roof is a filled triangle; body is an
+       outlined rounded rect so the colored bars read as the "contents". -->
+  <!-- Roof -->
+  <path d="M256 96 L420 232 L92 232 Z" fill="#ffffff"/>
+  <!-- Body outline -->
+  <rect x="120" y="232" width="272" height="188" rx="20" ry="20"
+        fill="#ffffff"/>
+
+  <!-- Interior timeline bars (clipped to the body via rounded rects),
+       offset like Gantt stays. Palette: red / green / amber. -->
+  <g>
+    <rect x="150" y="266" width="150" height="30" rx="15" ry="15" fill="#e74c3c"/>
+    <rect x="214" y="311" width="148" height="30" rx="15" ry="15" fill="#2ecc71"/>
+    <rect x="150" y="356" width="120" height="30" rx="15" ry="15" fill="#f1c40f"/>
+  </g>
+</svg>

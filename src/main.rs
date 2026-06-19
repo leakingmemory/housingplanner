@@ -11,10 +11,14 @@ fn main() -> eframe::Result {
         return Ok(());
     }
 
+    let icon = eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon-256.png"))
+        .expect("embedded icon is a valid PNG");
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1280.0, 800.0])
             .with_min_inner_size([800.0, 480.0])
+            .with_icon(std::sync::Arc::new(icon))
             .with_title("Housing Planner"),
         ..Default::default()
     };

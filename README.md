@@ -1,5 +1,7 @@
 # housingplanner
 
+<img src="assets/logo.png" alt="Housing Planner" width="420">
+
 A small cross-platform desktop (and, with extra setup, Android) app for
 planning **who stays where, and when**. You register housings, people and
 groups, assign stays with arrival/departure dates, and see it all laid out on a
@@ -79,6 +81,29 @@ CRATES_DIR=$(ls -d ~/.cargo/registry/src/index.crates.io-* | head -n1)
 cratelist Cargo.lock --license-contents "$CRATES_DIR" > DEPENDENCIES_LICENSE
 gzip -fk DEPENDENCIES_LICENSE
 ```
+
+## Branding / assets
+
+Logo and icon sources live in `assets/`:
+
+- `assets/icon.svg` / `assets/logo.svg` — the editable vector sources (a house
+  whose interior is the app's colored timeline bars).
+- `assets/icon-*.png`, `assets/logo.png`, `assets/icon.ico` — generated raster
+  exports. The window/taskbar icon is embedded from `assets/icon-256.png`; on
+  Windows the `.exe` icon is embedded from `assets/icon.ico` via `build.rs`.
+
+Regenerate the raster exports after editing the SVGs:
+
+```sh
+cd assets
+for s in 16 32 48 64 128 256 512; do rsvg-convert -w $s -h $s icon.svg -o icon-$s.png; done
+rsvg-convert -w 900 -h 240 logo.svg -o logo.png
+python3 -c "from PIL import Image; Image.open('icon-256.png').save('icon.ico', \
+  sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])"
+```
+
+The same PNGs are the source for Android launcher densities (wiring up
+`cargo-apk` mipmaps is left for when the Android build is set up).
 
 ## Android (optional, extra toolchain required)
 

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="240" viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg">
+  <!-- Housing Planner logo: the icon mark + wordmark. Transparent background. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4aa3df"/>
+      <stop offset="1" stop-color="#2e86c1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Mark: the 512-based icon scaled to 200px and placed at (20,20). -->
+  <g transform="translate(20,20) scale(0.390625)">
+    <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#tile)"/>
+    <path d="M256 96 L420 232 L92 232 Z" fill="#ffffff"/>
+    <rect x="120" y="232" width="272" height="188" rx="20" ry="20" fill="#ffffff"/>
+    <rect x="150" y="266" width="150" height="30" rx="15" ry="15" fill="#e74c3c"/>
+    <rect x="214" y="311" width="148" height="30" rx="15" ry="15" fill="#2ecc71"/>
+    <rect x="150" y="356" width="120" height="30" rx="15" ry="15" fill="#f1c40f"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="252" y="138" font-family="DejaVu Sans, Verdana, sans-serif"
+        font-size="78" font-weight="700" fill="#2c3e50">Housing</text>
+  <text x="252" y="206" font-family="DejaVu Sans, Verdana, sans-serif"
+        font-size="78" font-weight="400" fill="#5d6d7e">Planner</text>
+</svg>

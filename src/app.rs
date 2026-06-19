@@ -30,6 +30,8 @@ pub struct PlannerApp {
     status: String,
     /// Whether the About / Licenses window is open.
     licenses_open: bool,
+    /// App logo texture, shown in the About window.
+    logo: Option<egui::TextureHandle>,
 }
 
 impl PlannerApp {
@@ -45,6 +47,19 @@ impl PlannerApp {
             .map(|d| d - Duration::days(2))
             .unwrap_or(today);
 
+        // Decode the embedded icon PNG into a texture for the About window
+        // (reuses eframe's PNG decoder, so no extra image dependency).
+        let logo = eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon-256.png"))
+            .ok()
+            .map(|d| {
+                let image = egui::ColorImage::from_rgba_unmultiplied(
+                    [d.width as usize, d.height as usize],
+                    &d.rgba,
+                );
+                cc.egui_ctx
+                    .load_texture("app-logo", image, egui::TextureOptions::LINEAR)
+            });
+
         Self {
             plan,
             view_start,
@@ -54,6 +69,7 @@ impl PlannerApp {
             zoom_remainder: 0.0,
             status: String::new(),
             licenses_open: false,
+            logo,
         }
     }
 }
@@ -197,11 +213,14 @@ impl PlannerApp {
     /// The About window: app info, this app's license, and the embedded
     /// third-party dependency licenses (the cross-platform attribution surface).
     fn licenses_window(&mut self, ctx: &egui::Context) {
+        // Clone the (Arc-backed) handle so the closure doesn't borrow `self`,
+        // which `.open(&mut self.licenses_open)` already borrows mutably.
+        let logo = self.logo.clone();
         egui::Window::new("About / Licenses")
             .open(&mut self.licenses_open)
             .resizable(true)
             .default_size([720.0, 560.0])
-            .show(ctx, about_contents);
+            .show(ctx, |ui| about_contents(ui, logo.as_ref()));
     }
 
     /// Prompt for a path and write the current plan as JSON.
@@ -537,10 +556,17 @@ fn days_in_month(year: i32, month: u32) -> u32 {
 }
 
 /// Contents of the About / Licenses window.
-fn about_contents(ui: &mut egui::Ui) {
-    ui.heading("Housing Planner");
-    ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
-    ui.label("Plan who stays where, and when.");
+fn about_contents(ui: &mut egui::Ui, logo: Option<&egui::TextureHandle>) {
+    ui.horizontal(|ui| {
+        if let Some(tex) = logo {
+            ui.add(egui::Image::new((tex.id(), egui::vec2(72.0, 72.0))));
+        }
+        ui.vertical(|ui| {
+            ui.heading("Housing Planner");
+            ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
+            ui.label("Plan who stays where, and when.");
+        });
+    });
     ui.add_space(6.0);
 
     if ui.button("📋 Copy dependency licenses").clicked() {
@@ -569,4 +595,18 @@ fn about_contents(ui: &mut egui::Ui) {
                     }
                 });
         });
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn embedded_icon_is_valid_png() {
+        // The window icon and About-window logo both decode this; make sure the
+        // committed asset stays a valid PNG.
+        let icon = eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon-256.png"));
+        assert!(icon.is_ok(), "icon-256.png failed to decode: {:?}", icon.err());
+        let icon = icon.unwrap();
+        assert_eq!(icon.width, 256);
+        assert_eq!(icon.height, 256);
+    }
 }
