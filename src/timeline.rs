@@ -9,7 +9,9 @@ use egui::{Align2, Color32, CornerRadius, FontId, Pos2, Rect, Sense, Stroke, Str
 
 use crate::model::{Plan, Stay};
 
-const LABEL_WIDTH: f32 = 160.0;
+/// Width of the left column listing housing names. Public so the app can map
+/// pointer positions to dates when zooming.
+pub const LABEL_WIDTH: f32 = 160.0;
 const HEADER_HEIGHT: f32 = 28.0;
 const ROW_HEIGHT: f32 = 34.0;
 const BAR_PADDING: f32 = 5.0;

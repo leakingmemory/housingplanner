@@ -41,6 +41,12 @@ cargo run --release
 - **Zoom** — width of each day column.
 - **Today** / **Fit to stays** — jump the view.
 
+### Timeline gestures
+- **Drag** the timeline left/right to pan through time.
+- **Ctrl/Cmd + scroll** (or pinch on a trackpad) over the timeline to zoom,
+  anchored on the date under the pointer. Plain scroll moves the housing list
+  vertically.
+
 ## Android (optional, extra toolchain required)
 
 The code is already Android-ready: app logic is in the library crate and

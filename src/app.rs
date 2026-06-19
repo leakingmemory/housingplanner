@@ -8,6 +8,11 @@ use crate::timeline;
 /// Storage key used for `eframe`'s built-in cross-platform persistence.
 const STORAGE_KEY: &str = "hplan_plan";
 
+/// Pixel width of a single day column, clamped to this range (shared by the
+/// zoom slider and the Ctrl/Cmd + wheel / pinch zoom).
+const MIN_DAY_WIDTH: f32 = 6.0;
+const MAX_DAY_WIDTH: f32 = 80.0;
+
 pub struct PlannerApp {
     plan: Plan,
     // --- View state (not persisted) ---
@@ -16,6 +21,8 @@ pub struct PlannerApp {
     day_width: f32,
     /// Sub-day remainder accumulated while drag-panning the timeline.
     pan_remainder: f32,
+    /// Sub-day remainder accumulated while pointer-anchored zooming.
+    zoom_remainder: f32,
     /// Transient status line (e.g. result of the last file save/load).
     status: String,
 }
@@ -39,6 +46,7 @@ impl PlannerApp {
             days_visible: 30,
             day_width: 26.0,
             pan_remainder: 0.0,
+            zoom_remainder: 0.0,
             status: String::new(),
         }
     }
@@ -64,6 +72,7 @@ impl eframe::App for PlannerApp {
                     self.days_visible,
                     self.day_width,
                 );
+                self.handle_zoom(ui, &response);
                 self.handle_pan(ui, &response);
             });
         });
@@ -71,6 +80,39 @@ impl eframe::App for PlannerApp {
 }
 
 impl PlannerApp {
+    /// Ctrl/Cmd + wheel (or trackpad pinch) zooms the day width, anchored on the
+    /// date under the pointer so it stays put. egui zeroes the scroll delta when
+    /// the zoom modifier is held, so the surrounding scroll area doesn't move.
+    fn handle_zoom(&mut self, ui: &egui::Ui, response: &egui::Response) {
+        if !response.hovered() {
+            return;
+        }
+        let zoom = ui.ctx().input(|i| i.zoom_delta());
+        if (zoom - 1.0).abs() < 1e-4 {
+            return;
+        }
+
+        let old_w = self.day_width;
+        let new_w = (old_w * zoom).clamp(MIN_DAY_WIDTH, MAX_DAY_WIDTH);
+        if (new_w - old_w).abs() < f32::EPSILON {
+            return;
+        }
+
+        // Keep the date under the pointer fixed (fall back to the left edge).
+        let plot_left = response.rect.min.x + timeline::LABEL_WIDTH;
+        let pointer_x = response.hover_pos().map_or(plot_left, |p| p.x);
+        let anchor_px = (pointer_x - plot_left).max(0.0);
+
+        // view_start shifts by the change in days spanned up to the anchor.
+        self.zoom_remainder += anchor_px / old_w - anchor_px / new_w;
+        let whole_days = self.zoom_remainder.trunc();
+        if whole_days != 0.0 {
+            self.view_start += Duration::days(whole_days as i64);
+            self.zoom_remainder -= whole_days;
+        }
+        self.day_width = new_w;
+    }
+
     /// Drag-to-pan: shift the visible date window as the canvas is dragged.
     /// Dragging right reveals earlier dates (a "grab the content" gesture); a
     /// fractional-day remainder is carried over so panning stays smooth.
@@ -108,7 +150,11 @@ impl PlannerApp {
                 );
 
                 ui.label("Zoom:");
-                ui.add(egui::Slider::new(&mut self.day_width, 8.0..=60.0).show_value(false));
+                ui.add(
+                    egui::Slider::new(&mut self.day_width, MIN_DAY_WIDTH..=MAX_DAY_WIDTH)
+                        .show_value(false),
+                )
+                .on_hover_text("Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline");
 
                 if ui.button("Today").clicked() {
                     self.view_start = chrono::Local::now().date_naive();
