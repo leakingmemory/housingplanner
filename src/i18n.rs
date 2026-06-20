@@ -21,6 +21,7 @@ pub enum Lang {
     Italian,
     Spanish,
     Dutch,
+    Russian,
 }
 
 impl Default for Lang {
@@ -31,7 +32,7 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 12] = [
+    pub const ALL: [Lang; 13] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
@@ -44,6 +45,7 @@ impl Lang {
         Lang::Italian,
         Lang::Spanish,
         Lang::Dutch,
+        Lang::Russian,
     ];
 
     /// Native name shown in the language picker.
@@ -61,6 +63,7 @@ impl Lang {
             Lang::Italian => "Italiano",
             Lang::Spanish => "Español",
             Lang::Dutch => "Nederlands",
+            Lang::Russian => "Русский",
         }
     }
 
@@ -93,6 +96,8 @@ impl Lang {
             Lang::Spanish
         } else if v.starts_with("nl") {
             Lang::Dutch
+        } else if v.starts_with("ru") {
+            Lang::Russian
         } else {
             Lang::English
         }
@@ -114,6 +119,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::Italian => it(en),
         Lang::Spanish => es(en),
         Lang::Dutch => nl(en),
+        Lang::Russian => ru(en),
     }
 }
 
@@ -1680,6 +1686,132 @@ fn nl(en: &'static str) -> &'static str {
         "Discard" => "Verwerpen",
         "Cancel" => "Annuleren",
         "untitled" => "naamloos",
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Russian translations, keyed by the English source string. Unknown strings
+/// fall back to English.
+fn ru(en: &'static str) -> &'static str {
+    match en {
+        "📊 Overview" => "📊 Обзор",
+        "👥 Groups" => "👥 Группы",
+        "🧍 Persons" => "🧍 Люди",
+        "🏠 Housings" => "🏠 Жильё",
+        "From:" => "С:",
+        "Days:" => "Дни:",
+        "Zoom:" => "Масштаб:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Или Ctrl/Cmd + прокрутка (щипок на тачпаде) над шкалой времени"
+        }
+        "Today" => "Сегодня",
+        "Fit to stays" => "Подогнать под проживания",
+        "📂 Load…" => "📂 Открыть…",
+        "ℹ About" => "ℹ О программе",
+        "Language" => "Язык",
+        "Saved →" => "Сохранено →",
+        "Loaded ←" => "Загружено ←",
+        "Save failed:" => "Не удалось сохранить:",
+        "Encode failed:" => "Не удалось закодировать:",
+        "Read failed:" => "Не удалось прочитать:",
+        "Parse failed:" => "Не удалось разобрать:",
+        "File save is not available on Android yet." => {
+            "Сохранение в файл пока недоступно на Android."
+        }
+        "File load is not available on Android yet." => {
+            "Загрузка из файла пока недоступна на Android."
+        }
+        "Housing Planner plan" => "План Housing Planner",
+        "About / Licenses" => "О программе / Лицензии",
+        "Version" => "Версия",
+        "Plan who stays where, and when." => "Планируйте, кто где живёт и когда.",
+        "📋 Copy dependency licenses" => "📋 Скопировать лицензии зависимостей",
+        "This application" => "Это приложение",
+        "Third-party dependencies" => "Сторонние зависимости",
+        "Welcome to Housing Planner" => "Добро пожаловать в Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Добавляйте жильё, группы и людей на вкладках выше —"
+        }
+        "📋 Load example data" => "📋 Загрузить пример данных",
+        "Add a housing in the Housings tab to start planning." => {
+            "Добавьте жильё на вкладке «Жильё», чтобы начать планирование."
+        }
+        "Group" => "Группа",
+        "Person" => "Человек",
+        "Housing" => "Жильё",
+        "➕ New" => "➕ Создать",
+        "Stays:" => "Проживания:",
+        "Stays (individual):" => "Проживания (индивидуальные):",
+        "➕ Add stay" => "➕ Добавить проживание",
+        "Add a housing and a person/group first." => "Сначала добавьте жильё и человека/группу.",
+        "(no stays)" => "(нет проживаний)",
+        "(group)" => "(группа)",
+        "No groups yet — add one." => "Групп пока нет — добавьте одну.",
+        "🗑 Delete group" => "🗑 Удалить группу",
+        "Members:" => "Участники:",
+        "(no members)" => "(нет участников)",
+        "➕ Add existing…" => "➕ Добавить существующего…",
+        "➕ New person" => "➕ Новый человек",
+        "Select or create a group." => "Выберите или создайте группу.",
+        "No stays for this group yet." => "Для этой группы пока нет проживаний.",
+        "No persons yet — add one." => "Людей пока нет — добавьте одного.",
+        "— no group —" => "— без группы —",
+        "🗑 Delete person" => "🗑 Удалить человека",
+        "Select or create a person." => "Выберите или создайте человека.",
+        "No stays for this person yet." => "Для этого человека пока нет проживаний.",
+        "No housings yet — add one." => "Жилья пока нет — добавьте.",
+        "Capacity" => "Вместимость",
+        "Notes:" => "Заметки:",
+        "🗑 Delete housing" => "🗑 Удалить жильё",
+        "Select or create a housing." => "Выберите или создайте жильё.",
+        "No stays in this housing yet." => "В этом жилье пока нет проживаний.",
+        "cap" => "вмест.",
+        "To:" => "По:",
+        "Nights:" => "Ночей:",
+        "People:" => "Людей:",
+        "⚠ Also booked elsewhere at the same time" => {
+            "⚠ Также забронировано в другом месте в это же время"
+        }
+        "<deleted person>" => "<удалённый человек>",
+        "<deleted group>" => "<удалённая группа>",
+        "📜 Changelog" => "📜 Журнал изменений",
+        "↩ Undo last change" => "↩ Отменить последнее изменение",
+        "entries" => "записей",
+        "No changes yet." => "Изменений пока нет.",
+        "(no group)" => "(без группы)",
+        "Created housing" => "Создано жильё",
+        "Deleted housing" => "Удалено жильё",
+        "Renamed housing" => "Переименовано жильё",
+        "Changed capacity of" => "Изменена вместимость для",
+        "Edited notes of" => "Отредактированы заметки для",
+        "Created group" => "Создана группа",
+        "Deleted group" => "Удалена группа",
+        "Renamed group" => "Переименована группа",
+        "Changed colour of" => "Изменён цвет для",
+        "Added person" => "Добавлен человек",
+        "Deleted person" => "Удалён человек",
+        "Renamed person" => "Переименован человек",
+        "Changed group of" => "Изменена группа для",
+        "Added stay" => "Добавлено проживание",
+        "Removed stay" => "Удалено проживание",
+        "Moved stay" => "Перемещено проживание",
+        "Changed occupant of stay" => "Изменён жилец проживания",
+        "Changed dates of stay" => "Изменены даты проживания",
+        "Loaded example data" => "Загружен пример данных",
+        "Loaded plan from file" => "План загружен из файла",
+        "Loaded a plan with no change history" => "Загружен план без истории изменений",
+        "Undid" => "Отменено",
+        "💾 Save" => "💾 Сохранить",
+        "Save As…" => "Сохранить как…",
+        "Unsaved changes" => "Несохранённые изменения",
+        "You have unsaved changes. Save before closing?" => {
+            "У вас есть несохранённые изменения. Сохранить перед закрытием?"
+        }
+        "Save" => "Сохранить",
+        "Discard" => "Не сохранять",
+        "Cancel" => "Отмена",
+        "untitled" => "без названия",
         // Fallback: English
         other => other,
     }
