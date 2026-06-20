@@ -17,6 +17,7 @@ pub enum Lang {
     Danish,
     Ukrainian,
     German,
+    French,
 }
 
 impl Default for Lang {
@@ -27,7 +28,7 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 8] = [
+    pub const ALL: [Lang; 9] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
@@ -36,6 +37,7 @@ impl Lang {
         Lang::Danish,
         Lang::Ukrainian,
         Lang::German,
+        Lang::French,
     ];
 
     /// Native name shown in the language picker.
@@ -49,6 +51,7 @@ impl Lang {
             Lang::Danish => "Dansk",
             Lang::Ukrainian => "Українська",
             Lang::German => "Deutsch",
+            Lang::French => "Français",
         }
     }
 
@@ -73,6 +76,8 @@ impl Lang {
             Lang::Ukrainian
         } else if v.starts_with("de") {
             Lang::German
+        } else if v.starts_with("fr") {
+            Lang::French
         } else {
             Lang::English
         }
@@ -90,6 +95,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::Danish => da(en),
         Lang::Ukrainian => uk(en),
         Lang::German => de(en),
+        Lang::French => fr(en),
     }
 }
 
@@ -855,6 +861,118 @@ fn de(en: &'static str) -> &'static str {
         "⚠ Also booked elsewhere at the same time" => "⚠ Gleichzeitig auch anderswo gebucht",
         "<deleted person>" => "<gelöschte Person>",
         "<deleted group>" => "<gelöschte Gruppe>",
+
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// French translations, keyed by the English source string. Unknown strings fall
+/// back to English.
+fn fr(en: &'static str) -> &'static str {
+    match en {
+        // Tabs
+        "📊 Overview" => "📊 Vue d'ensemble",
+        "👥 Groups" => "👥 Groupes",
+        "🧍 Persons" => "🧍 Personnes",
+        "🏠 Housings" => "🏠 Logements",
+
+        // Top bar
+        "From:" => "Du :",
+        "Days:" => "Jours :",
+        "Zoom:" => "Zoom :",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Ou Ctrl/Cmd + défilement (pincement sur le pavé tactile) au-dessus de la chronologie"
+        }
+        "Today" => "Aujourd'hui",
+        "Fit to stays" => "Ajuster aux séjours",
+        "💾 Save…" => "💾 Enregistrer…",
+        "📂 Load…" => "📂 Ouvrir…",
+        "ℹ About" => "ℹ À propos",
+        "Language" => "Langue",
+
+        // Status messages (used as prefixes before a path / error)
+        "Saved →" => "Enregistré →",
+        "Loaded ←" => "Chargé ←",
+        "Save failed:" => "Échec de l'enregistrement :",
+        "Encode failed:" => "Échec de l'encodage :",
+        "Read failed:" => "Échec de la lecture :",
+        "Parse failed:" => "Échec de l'analyse :",
+        "File save is not available on Android yet." => {
+            "L'enregistrement de fichiers n'est pas encore disponible sur Android."
+        }
+        "File load is not available on Android yet." => {
+            "Le chargement de fichiers n'est pas encore disponible sur Android."
+        }
+        "Housing Planner plan" => "Plan Housing Planner",
+
+        // About window
+        "About / Licenses" => "À propos / Licences",
+        "Version" => "Version",
+        "Plan who stays where, and when." => "Planifiez qui loge où, et quand.",
+        "📋 Copy dependency licenses" => "📋 Copier les licences des dépendances",
+        "This application" => "Cette application",
+        "Third-party dependencies" => "Dépendances tierces",
+
+        // Overview tab
+        "Welcome to Housing Planner" => "Bienvenue dans Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Ajoutez des logements, des groupes et des personnes dans les onglets ci-dessus —"
+        }
+        "📋 Load example data" => "📋 Charger des données d'exemple",
+        "Add a housing in the Housings tab to start planning." => {
+            "Ajoutez un logement dans l'onglet Logements pour commencer à planifier."
+        }
+
+        // Selectors / common
+        "Group" => "Groupe",
+        "Person" => "Personne",
+        "Housing" => "Logement",
+        "➕ New" => "➕ Nouveau",
+        "Stays:" => "Séjours :",
+        "Stays (individual):" => "Séjours (individuels) :",
+        "➕ Add stay" => "➕ Ajouter un séjour",
+        "Add a housing and a person/group first." => {
+            "Ajoutez d'abord un logement et une personne/un groupe."
+        }
+        "(no stays)" => "(aucun séjour)",
+        "(group)" => "(groupe)",
+
+        // Groups tab
+        "No groups yet — add one." => "Aucun groupe pour l'instant — ajoutez-en un.",
+        "🗑 Delete group" => "🗑 Supprimer le groupe",
+        "Members:" => "Membres :",
+        "(no members)" => "(aucun membre)",
+        "➕ Add existing…" => "➕ Ajouter un existant…",
+        "➕ New person" => "➕ Nouvelle personne",
+        "Select or create a group." => "Sélectionnez ou créez un groupe.",
+        "No stays for this group yet." => "Aucun séjour pour ce groupe pour l'instant.",
+
+        // Persons tab
+        "No persons yet — add one." => "Aucune personne pour l'instant — ajoutez-en une.",
+        "— no group —" => "— aucun groupe —",
+        "🗑 Delete person" => "🗑 Supprimer la personne",
+        "Select or create a person." => "Sélectionnez ou créez une personne.",
+        "No stays for this person yet." => "Aucun séjour pour cette personne pour l'instant.",
+
+        // Housings tab
+        "No housings yet — add one." => "Aucun logement pour l'instant — ajoutez-en un.",
+        "Capacity" => "Capacité",
+        "Notes:" => "Notes :",
+        "🗑 Delete housing" => "🗑 Supprimer le logement",
+        "Select or create a housing." => "Sélectionnez ou créez un logement.",
+        "No stays in this housing yet." => "Aucun séjour dans ce logement pour l'instant.",
+
+        // Timeline
+        "cap" => "cap.",
+        "To:" => "Au :",
+        "Nights:" => "Nuits :",
+        "People:" => "Personnes :",
+        "⚠ Also booked elsewhere at the same time" => {
+            "⚠ Également réservé ailleurs au même moment"
+        }
+        "<deleted person>" => "<personne supprimée>",
+        "<deleted group>" => "<groupe supprimé>",
 
         // Fallback: English
         other => other,
