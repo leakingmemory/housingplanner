@@ -20,6 +20,7 @@ pub enum Lang {
     French,
     Italian,
     Spanish,
+    Dutch,
 }
 
 impl Default for Lang {
@@ -30,7 +31,7 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 11] = [
+    pub const ALL: [Lang; 12] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
@@ -42,6 +43,7 @@ impl Lang {
         Lang::French,
         Lang::Italian,
         Lang::Spanish,
+        Lang::Dutch,
     ];
 
     /// Native name shown in the language picker.
@@ -58,6 +60,7 @@ impl Lang {
             Lang::French => "Français",
             Lang::Italian => "Italiano",
             Lang::Spanish => "Español",
+            Lang::Dutch => "Nederlands",
         }
     }
 
@@ -88,6 +91,8 @@ impl Lang {
             Lang::Italian
         } else if v.starts_with("es") {
             Lang::Spanish
+        } else if v.starts_with("nl") {
+            Lang::Dutch
         } else {
             Lang::English
         }
@@ -108,6 +113,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::French => fr(en),
         Lang::Italian => it(en),
         Lang::Spanish => es(en),
+        Lang::Dutch => nl(en),
     }
 }
 
@@ -1548,6 +1554,132 @@ fn es(en: &'static str) -> &'static str {
         "Discard" => "Descartar",
         "Cancel" => "Cancelar",
         "untitled" => "sin título",
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Dutch translations, keyed by the English source string. Unknown strings
+/// fall back to English.
+fn nl(en: &'static str) -> &'static str {
+    match en {
+        "📊 Overview" => "📊 Overzicht",
+        "👥 Groups" => "👥 Groepen",
+        "🧍 Persons" => "🧍 Personen",
+        "🏠 Housings" => "🏠 Accommodaties",
+        "From:" => "Van:",
+        "Days:" => "Dagen:",
+        "Zoom:" => "Zoom:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Of Ctrl/Cmd + scrollen (knijpen op trackpad) over de tijdlijn"
+        }
+        "Today" => "Vandaag",
+        "Fit to stays" => "Aanpassen aan verblijven",
+        "📂 Load…" => "📂 Openen…",
+        "ℹ About" => "ℹ Over",
+        "Language" => "Taal",
+        "Saved →" => "Opgeslagen →",
+        "Loaded ←" => "Geladen ←",
+        "Save failed:" => "Opslaan mislukt:",
+        "Encode failed:" => "Coderen mislukt:",
+        "Read failed:" => "Lezen mislukt:",
+        "Parse failed:" => "Verwerken mislukt:",
+        "File save is not available on Android yet." => {
+            "Opslaan naar bestand is nog niet beschikbaar op Android."
+        }
+        "File load is not available on Android yet." => {
+            "Laden uit bestand is nog niet beschikbaar op Android."
+        }
+        "Housing Planner plan" => "Housing Planner-plan",
+        "About / Licenses" => "Over / Licenties",
+        "Version" => "Versie",
+        "Plan who stays where, and when." => "Plan wie waar verblijft, en wanneer.",
+        "📋 Copy dependency licenses" => "📋 Afhankelijkheidslicenties kopiëren",
+        "This application" => "Deze applicatie",
+        "Third-party dependencies" => "Afhankelijkheden van derden",
+        "Welcome to Housing Planner" => "Welkom bij Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Voeg accommodaties, groepen en personen toe in de tabbladen hierboven —"
+        }
+        "📋 Load example data" => "📋 Voorbeeldgegevens laden",
+        "Add a housing in the Housings tab to start planning." => {
+            "Voeg een accommodatie toe op het tabblad Accommodaties om te beginnen met plannen."
+        }
+        "Group" => "Groep",
+        "Person" => "Persoon",
+        "Housing" => "Accommodatie",
+        "➕ New" => "➕ Nieuw",
+        "Stays:" => "Verblijven:",
+        "Stays (individual):" => "Verblijven (individueel):",
+        "➕ Add stay" => "➕ Verblijf toevoegen",
+        "Add a housing and a person/group first." => {
+            "Voeg eerst een accommodatie en een persoon/groep toe."
+        }
+        "(no stays)" => "(geen verblijven)",
+        "(group)" => "(groep)",
+        "No groups yet — add one." => "Nog geen groepen — voeg er een toe.",
+        "🗑 Delete group" => "🗑 Groep verwijderen",
+        "Members:" => "Leden:",
+        "(no members)" => "(geen leden)",
+        "➕ Add existing…" => "➕ Bestaande toevoegen…",
+        "➕ New person" => "➕ Nieuwe persoon",
+        "Select or create a group." => "Selecteer of maak een groep.",
+        "No stays for this group yet." => "Nog geen verblijven voor deze groep.",
+        "No persons yet — add one." => "Nog geen personen — voeg er een toe.",
+        "— no group —" => "— geen groep —",
+        "🗑 Delete person" => "🗑 Persoon verwijderen",
+        "Select or create a person." => "Selecteer of maak een persoon.",
+        "No stays for this person yet." => "Nog geen verblijven voor deze persoon.",
+        "No housings yet — add one." => "Nog geen accommodaties — voeg er een toe.",
+        "Capacity" => "Capaciteit",
+        "Notes:" => "Notities:",
+        "🗑 Delete housing" => "🗑 Accommodatie verwijderen",
+        "Select or create a housing." => "Selecteer of maak een accommodatie.",
+        "No stays in this housing yet." => "Nog geen verblijven in deze accommodatie.",
+        "cap" => "cap",
+        "To:" => "Tot:",
+        "Nights:" => "Nachten:",
+        "People:" => "Personen:",
+        "⚠ Also booked elsewhere at the same time" => "⚠ Tegelijkertijd ook elders geboekt",
+        "<deleted person>" => "<verwijderde persoon>",
+        "<deleted group>" => "<verwijderde groep>",
+        "📜 Changelog" => "📜 Wijzigingslogboek",
+        "↩ Undo last change" => "↩ Laatste wijziging ongedaan maken",
+        "entries" => "items",
+        "No changes yet." => "Nog geen wijzigingen.",
+        "(no group)" => "(geen groep)",
+        "Created housing" => "Accommodatie aangemaakt",
+        "Deleted housing" => "Accommodatie verwijderd",
+        "Renamed housing" => "Accommodatie hernoemd",
+        "Changed capacity of" => "Capaciteit gewijzigd van",
+        "Edited notes of" => "Notities bewerkt van",
+        "Created group" => "Groep aangemaakt",
+        "Deleted group" => "Groep verwijderd",
+        "Renamed group" => "Groep hernoemd",
+        "Changed colour of" => "Kleur gewijzigd van",
+        "Added person" => "Persoon toegevoegd",
+        "Deleted person" => "Persoon verwijderd",
+        "Renamed person" => "Persoon hernoemd",
+        "Changed group of" => "Groep gewijzigd van",
+        "Added stay" => "Verblijf toegevoegd",
+        "Removed stay" => "Verblijf verwijderd",
+        "Moved stay" => "Verblijf verplaatst",
+        "Changed occupant of stay" => "Bewoner van verblijf gewijzigd",
+        "Changed dates of stay" => "Datums van verblijf gewijzigd",
+        "Loaded example data" => "Voorbeeldgegevens geladen",
+        "Loaded plan from file" => "Plan geladen uit bestand",
+        "Loaded a plan with no change history" => "Een plan zonder wijzigingsgeschiedenis geladen",
+        "Undid" => "Ongedaan gemaakt",
+        "💾 Save" => "💾 Opslaan",
+        "Save As…" => "Opslaan als…",
+        "Unsaved changes" => "Niet-opgeslagen wijzigingen",
+        "You have unsaved changes. Save before closing?" => {
+            "Je hebt niet-opgeslagen wijzigingen. Opslaan voordat je sluit?"
+        }
+        "Save" => "Opslaan",
+        "Discard" => "Verwerpen",
+        "Cancel" => "Annuleren",
+        "untitled" => "naamloos",
         // Fallback: English
         other => other,
     }
