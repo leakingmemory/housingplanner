@@ -25,6 +25,7 @@ pub enum Lang {
     Icelandic,
     Greenlandic,
     Faroese,
+    Greek,
 }
 
 impl Default for Lang {
@@ -35,7 +36,7 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 16] = [
+    pub const ALL: [Lang; 17] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
@@ -52,6 +53,7 @@ impl Lang {
         Lang::Icelandic,
         Lang::Greenlandic,
         Lang::Faroese,
+        Lang::Greek,
     ];
 
     /// Native name shown in the language picker.
@@ -73,6 +75,7 @@ impl Lang {
             Lang::Icelandic => "Íslenska",
             Lang::Greenlandic => "Kalaallisut",
             Lang::Faroese => "Føroyskt",
+            Lang::Greek => "Ελληνικά",
         }
     }
 
@@ -113,6 +116,8 @@ impl Lang {
             Lang::Greenlandic
         } else if v.starts_with("fo") {
             Lang::Faroese
+        } else if v.starts_with("el") {
+            Lang::Greek
         } else {
             Lang::English
         }
@@ -138,6 +143,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::Icelandic => isl(en),
         Lang::Greenlandic => kl(en),
         Lang::Faroese => fo(en),
+        Lang::Greek => el(en),
     }
 }
 
@@ -2210,6 +2216,132 @@ fn fo(en: &'static str) -> &'static str {
         "Discard" => "Vraka",
         "Cancel" => "Angra",
         "untitled" => "ónevnt",
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Greek translations, keyed by the English source string. Unknown strings
+/// fall back to English.
+fn el(en: &'static str) -> &'static str {
+    match en {
+        "📊 Overview" => "📊 Επισκόπηση",
+        "👥 Groups" => "👥 Ομάδες",
+        "🧍 Persons" => "🧍 Άτομα",
+        "🏠 Housings" => "🏠 Καταλύματα",
+        "From:" => "Από:",
+        "Days:" => "Ημέρες:",
+        "Zoom:" => "Ζουμ:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Ή Ctrl/Cmd + κύλιση (τσίμπημα στην επιφάνεια αφής) πάνω από τη γραμμή χρόνου"
+        }
+        "Today" => "Σήμερα",
+        "Fit to stays" => "Προσαρμογή στις διαμονές",
+        "📂 Load…" => "📂 Άνοιγμα…",
+        "ℹ About" => "ℹ Σχετικά",
+        "Language" => "Γλώσσα",
+        "Saved →" => "Αποθηκεύτηκε →",
+        "Loaded ←" => "Φορτώθηκε ←",
+        "Save failed:" => "Η αποθήκευση απέτυχε:",
+        "Encode failed:" => "Η κωδικοποίηση απέτυχε:",
+        "Read failed:" => "Η ανάγνωση απέτυχε:",
+        "Parse failed:" => "Η ανάλυση απέτυχε:",
+        "File save is not available on Android yet." => {
+            "Η αποθήκευση σε αρχείο δεν είναι ακόμη διαθέσιμη στο Android."
+        }
+        "File load is not available on Android yet." => {
+            "Η φόρτωση από αρχείο δεν είναι ακόμη διαθέσιμη στο Android."
+        }
+        "Housing Planner plan" => "Σχέδιο Housing Planner",
+        "About / Licenses" => "Σχετικά / Άδειες",
+        "Version" => "Έκδοση",
+        "Plan who stays where, and when." => "Σχεδιάστε ποιος μένει πού και πότε.",
+        "📋 Copy dependency licenses" => "📋 Αντιγραφή αδειών εξαρτήσεων",
+        "This application" => "Αυτή η εφαρμογή",
+        "Third-party dependencies" => "Εξαρτήσεις τρίτων",
+        "Welcome to Housing Planner" => "Καλώς ορίσατε στο Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Προσθέστε καταλύματα, ομάδες και άτομα στις παραπάνω καρτέλες —"
+        }
+        "📋 Load example data" => "📋 Φόρτωση δεδομένων παραδείγματος",
+        "Add a housing in the Housings tab to start planning." => {
+            "Προσθέστε ένα κατάλυμα στην καρτέλα Καταλύματα για να ξεκινήσετε τον σχεδιασμό."
+        }
+        "Group" => "Ομάδα",
+        "Person" => "Άτομο",
+        "Housing" => "Κατάλυμα",
+        "➕ New" => "➕ Νέο",
+        "Stays:" => "Διαμονές:",
+        "Stays (individual):" => "Διαμονές (ατομικές):",
+        "➕ Add stay" => "➕ Προσθήκη διαμονής",
+        "Add a housing and a person/group first." => {
+            "Προσθέστε πρώτα ένα κατάλυμα και ένα άτομο/μια ομάδα."
+        }
+        "(no stays)" => "(καμία διαμονή)",
+        "(group)" => "(ομάδα)",
+        "No groups yet — add one." => "Καμία ομάδα ακόμη — προσθέστε μία.",
+        "🗑 Delete group" => "🗑 Διαγραφή ομάδας",
+        "Members:" => "Μέλη:",
+        "(no members)" => "(κανένα μέλος)",
+        "➕ Add existing…" => "➕ Προσθήκη υπάρχοντος…",
+        "➕ New person" => "➕ Νέο άτομο",
+        "Select or create a group." => "Επιλέξτε ή δημιουργήστε μια ομάδα.",
+        "No stays for this group yet." => "Καμία διαμονή για αυτή την ομάδα ακόμη.",
+        "No persons yet — add one." => "Κανένα άτομο ακόμη — προσθέστε ένα.",
+        "— no group —" => "— καμία ομάδα —",
+        "🗑 Delete person" => "🗑 Διαγραφή ατόμου",
+        "Select or create a person." => "Επιλέξτε ή δημιουργήστε ένα άτομο.",
+        "No stays for this person yet." => "Καμία διαμονή για αυτό το άτομο ακόμη.",
+        "No housings yet — add one." => "Κανένα κατάλυμα ακόμη — προσθέστε ένα.",
+        "Capacity" => "Χωρητικότητα",
+        "Notes:" => "Σημειώσεις:",
+        "🗑 Delete housing" => "🗑 Διαγραφή καταλύματος",
+        "Select or create a housing." => "Επιλέξτε ή δημιουργήστε ένα κατάλυμα.",
+        "No stays in this housing yet." => "Καμία διαμονή σε αυτό το κατάλυμα ακόμη.",
+        "cap" => "χωρ.",
+        "To:" => "Έως:",
+        "Nights:" => "Νύχτες:",
+        "People:" => "Άτομα:",
+        "⚠ Also booked elsewhere at the same time" => "⚠ Κρατημένο και αλλού την ίδια περίοδο",
+        "<deleted person>" => "<διαγραμμένο άτομο>",
+        "<deleted group>" => "<διαγραμμένη ομάδα>",
+        "📜 Changelog" => "📜 Ιστορικό αλλαγών",
+        "↩ Undo last change" => "↩ Αναίρεση τελευταίας αλλαγής",
+        "entries" => "καταχωρίσεις",
+        "No changes yet." => "Καμία αλλαγή ακόμη.",
+        "(no group)" => "(καμία ομάδα)",
+        "Created housing" => "Δημιουργήθηκε κατάλυμα",
+        "Deleted housing" => "Διαγράφηκε κατάλυμα",
+        "Renamed housing" => "Μετονομάστηκε κατάλυμα",
+        "Changed capacity of" => "Αλλαγή χωρητικότητας για",
+        "Edited notes of" => "Επεξεργασία σημειώσεων για",
+        "Created group" => "Δημιουργήθηκε ομάδα",
+        "Deleted group" => "Διαγράφηκε ομάδα",
+        "Renamed group" => "Μετονομάστηκε ομάδα",
+        "Changed colour of" => "Αλλαγή χρώματος για",
+        "Added person" => "Προστέθηκε άτομο",
+        "Deleted person" => "Διαγράφηκε άτομο",
+        "Renamed person" => "Μετονομάστηκε άτομο",
+        "Changed group of" => "Αλλαγή ομάδας για",
+        "Added stay" => "Προστέθηκε διαμονή",
+        "Removed stay" => "Αφαιρέθηκε διαμονή",
+        "Moved stay" => "Μετακινήθηκε διαμονή",
+        "Changed occupant of stay" => "Αλλαγή ενοίκου της διαμονής",
+        "Changed dates of stay" => "Αλλαγή ημερομηνιών της διαμονής",
+        "Loaded example data" => "Φορτώθηκαν δεδομένα παραδείγματος",
+        "Loaded plan from file" => "Φορτώθηκε σχέδιο από αρχείο",
+        "Loaded a plan with no change history" => "Φορτώθηκε σχέδιο χωρίς ιστορικό αλλαγών",
+        "Undid" => "Αναιρέθηκε",
+        "💾 Save" => "💾 Αποθήκευση",
+        "Save As…" => "Αποθήκευση ως…",
+        "Unsaved changes" => "Μη αποθηκευμένες αλλαγές",
+        "You have unsaved changes. Save before closing?" => {
+            "Έχετε μη αποθηκευμένες αλλαγές. Αποθήκευση πριν το κλείσιμο;"
+        }
+        "Save" => "Αποθήκευση",
+        "Discard" => "Απόρριψη",
+        "Cancel" => "Άκυρο",
+        "untitled" => "χωρίς τίτλο",
         // Fallback: English
         other => other,
     }
