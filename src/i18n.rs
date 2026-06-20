@@ -24,6 +24,7 @@ pub enum Lang {
     Russian,
     Icelandic,
     Greenlandic,
+    Faroese,
 }
 
 impl Default for Lang {
@@ -34,7 +35,7 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 15] = [
+    pub const ALL: [Lang; 16] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
@@ -50,6 +51,7 @@ impl Lang {
         Lang::Russian,
         Lang::Icelandic,
         Lang::Greenlandic,
+        Lang::Faroese,
     ];
 
     /// Native name shown in the language picker.
@@ -70,6 +72,7 @@ impl Lang {
             Lang::Russian => "Русский",
             Lang::Icelandic => "Íslenska",
             Lang::Greenlandic => "Kalaallisut",
+            Lang::Faroese => "Føroyskt",
         }
     }
 
@@ -108,6 +111,8 @@ impl Lang {
             Lang::Icelandic
         } else if v.starts_with("kl") {
             Lang::Greenlandic
+        } else if v.starts_with("fo") {
+            Lang::Faroese
         } else {
             Lang::English
         }
@@ -132,6 +137,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::Russian => ru(en),
         Lang::Icelandic => isl(en),
         Lang::Greenlandic => kl(en),
+        Lang::Faroese => fo(en),
     }
 }
 
@@ -2077,6 +2083,133 @@ fn kl(en: &'static str) -> &'static str {
         "Discard" => "Discard",
         "Cancel" => "Cancel",
         "untitled" => "untitled",
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Faroese (Føroyskt) translations, keyed by the English source string.
+/// Best-effort; should be reviewed by a fluent speaker. Unknown strings fall
+/// back to English.
+fn fo(en: &'static str) -> &'static str {
+    match en {
+        "📊 Overview" => "📊 Yvirlit",
+        "👥 Groups" => "👥 Bólkar",
+        "🧍 Persons" => "🧍 Persónar",
+        "🏠 Housings" => "🏠 Bústaðir",
+        "From:" => "Frá:",
+        "Days:" => "Dagar:",
+        "Zoom:" => "Atdráttur:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Ella Ctrl/Cmd + rulling (kníp á flatuni) yvir tíðarlinjuni"
+        }
+        "Today" => "Í dag",
+        "Fit to stays" => "Tillaga til uppihald",
+        "📂 Load…" => "📂 Opna…",
+        "ℹ About" => "ℹ Um",
+        "Language" => "Mál",
+        "Saved →" => "Goymt →",
+        "Loaded ←" => "Innlisið ←",
+        "Save failed:" => "Goyming miseydnaðist:",
+        "Encode failed:" => "Koding miseydnaðist:",
+        "Read failed:" => "Lesing miseydnaðist:",
+        "Parse failed:" => "Tulking miseydnaðist:",
+        "File save is not available on Android yet." => {
+            "Goyming til fílu er enn ikki tøk á Android."
+        }
+        "File load is not available on Android yet." => {
+            "Innlesing úr fílu er enn ikki tøk á Android."
+        }
+        "Housing Planner plan" => "Housing Planner-ætlan",
+        "About / Licenses" => "Um / Loyvir",
+        "Version" => "Útgáva",
+        "Plan who stays where, and when." => "Ætla hvør býr hvar, og nær.",
+        "📋 Copy dependency licenses" => "📋 Avrita loyvir fyri avhongdar pakkar",
+        "This application" => "Hetta forritið",
+        "Third-party dependencies" => "Triðjaparts-avhongd",
+        "Welcome to Housing Planner" => "Vælkomin til Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Legg afturat bústøðum, bólkum og fólki í teigunum omanfyri —"
+        }
+        "📋 Load example data" => "📋 Innles dømisdátur",
+        "Add a housing in the Housings tab to start planning." => {
+            "Legg ein bústað afturat í Bústaðir-teiginum fyri at byrja at ætla."
+        }
+        "Group" => "Bólkur",
+        "Person" => "Persónur",
+        "Housing" => "Bústaður",
+        "➕ New" => "➕ Nýtt",
+        "Stays:" => "Uppihøld:",
+        "Stays (individual):" => "Uppihøld (einstøk):",
+        "➕ Add stay" => "➕ Legg uppihald afturat",
+        "Add a housing and a person/group first." => {
+            "Legg fyrst ein bústað og ein persón/bólk afturat."
+        }
+        "(no stays)" => "(eingi uppihøld)",
+        "(group)" => "(bólkur)",
+        "No groups yet — add one." => "Eingir bólkar enn — legg ein afturat.",
+        "🗑 Delete group" => "🗑 Strika bólk",
+        "Members:" => "Limir:",
+        "(no members)" => "(eingir limir)",
+        "➕ Add existing…" => "➕ Legg verandi afturat…",
+        "➕ New person" => "➕ Nýggjur persónur",
+        "Select or create a group." => "Vel ella stovna ein bólk.",
+        "No stays for this group yet." => "Eingi uppihøld fyri henda bólk enn.",
+        "No persons yet — add one." => "Eingir persónar enn — legg ein afturat.",
+        "— no group —" => "— eingin bólkur —",
+        "🗑 Delete person" => "🗑 Strika persón",
+        "Select or create a person." => "Vel ella stovna ein persón.",
+        "No stays for this person yet." => "Eingi uppihøld fyri henda persón enn.",
+        "No housings yet — add one." => "Eingir bústaðir enn — legg ein afturat.",
+        "Capacity" => "Pláss",
+        "Notes:" => "Viðmerkingar:",
+        "🗑 Delete housing" => "🗑 Strika bústað",
+        "Select or create a housing." => "Vel ella stovna ein bústað.",
+        "No stays in this housing yet." => "Eingi uppihøld í hesum bústaði enn.",
+        "cap" => "pláss",
+        "To:" => "Til:",
+        "Nights:" => "Nætur:",
+        "People:" => "Fólk:",
+        "⚠ Also booked elsewhere at the same time" => "⚠ Eisini bílagt aðrastaðni á sama tíð",
+        "<deleted person>" => "<strikaður persónur>",
+        "<deleted group>" => "<strikaður bólkur>",
+        "📜 Changelog" => "📜 Broytingarlogg",
+        "↩ Undo last change" => "↩ Angra seinastu broyting",
+        "entries" => "innføringar",
+        "No changes yet." => "Ongar broytingar enn.",
+        "(no group)" => "(eingin bólkur)",
+        "Created housing" => "Bústaður stovnaður",
+        "Deleted housing" => "Bústaður strikaður",
+        "Renamed housing" => "Bústaður umnevndur",
+        "Changed capacity of" => "Pláss broytt fyri",
+        "Edited notes of" => "Viðmerkingar broyttar fyri",
+        "Created group" => "Bólkur stovnaður",
+        "Deleted group" => "Bólkur strikaður",
+        "Renamed group" => "Bólkur umnevndur",
+        "Changed colour of" => "Litur broyttur fyri",
+        "Added person" => "Persónur lagdur afturat",
+        "Deleted person" => "Persónur strikaður",
+        "Renamed person" => "Persónur umnevndur",
+        "Changed group of" => "Bólkur broyttur fyri",
+        "Added stay" => "Uppihald lagt afturat",
+        "Removed stay" => "Uppihald strikað",
+        "Moved stay" => "Uppihald flutt",
+        "Changed occupant of stay" => "Íbúgvi í uppihaldi broyttur",
+        "Changed dates of stay" => "Dagfestingar í uppihaldi broyttar",
+        "Loaded example data" => "Dømisdátur innlisnar",
+        "Loaded plan from file" => "Ætlan innlisin úr fílu",
+        "Loaded a plan with no change history" => "Innlas eina ætlan uttan broytingarsøgu",
+        "Undid" => "Angrað",
+        "💾 Save" => "💾 Goym",
+        "Save As…" => "Goym sum…",
+        "Unsaved changes" => "Ógoymdar broytingar",
+        "You have unsaved changes. Save before closing?" => {
+            "Tú hevur ógoymdar broytingar. Goyma áðrenn tú letur aftur?"
+        }
+        "Save" => "Goym",
+        "Discard" => "Vraka",
+        "Cancel" => "Angra",
+        "untitled" => "ónevnt",
         // Fallback: English
         other => other,
     }

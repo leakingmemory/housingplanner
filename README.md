@@ -97,10 +97,10 @@ repository secret. The snap version in `snap/snapcraft.yaml` is kept in sync wit
 - **🌐 Language** — switch between English, Svenska (Swedish), Norsk bokmål,
   Norsk nynorsk (Norwegian), Davvisámegiella (Northern Sami), Dansk (Danish),
   Українська (Ukrainian), Deutsch (German), Français (French), Italiano (Italian),
-  Español (Spanish), Nederlands (Dutch), Русский (Russian), Íslenska (Icelandic)
-  and Kalaallisut (Greenlandic — a best-effort stub, mostly English; needs a
-  native speaker). Remembered between runs; defaults to your system locale
-  (`LANG` / `LC_*`).
+  Español (Spanish), Nederlands (Dutch), Русский (Russian), Íslenska (Icelandic),
+  Føroyskt (Faroese — best-effort, needs review) and Kalaallisut (Greenlandic — a
+  best-effort stub, mostly English; needs a native speaker). Remembered between
+  runs; defaults to your system locale (`LANG` / `LC_*`).
 
 The top-bar controls and the timeline gestures below apply to every tab's
 timeline.
