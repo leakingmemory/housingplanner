@@ -1,16 +1,29 @@
 #!/bin/sh
-# Reject commits that aren't `cargo fmt` clean — the master.yml CI workflow runs
-# `cargo fmt -- --check` on every push/PR to master, so catch it here first.
+# Pre-commit checks (enable for this clone with: git config core.hooksPath .githooks)
 #
-# Enable for this clone with:  git config core.hooksPath .githooks
+#   1. `cargo fmt` cleanliness — the master.yml CI workflow runs
+#      `cargo fmt -- --check` on every push/PR to master.
+#   2. translation completeness — every tr(...) string must be translated in all
+#      language tables (see scripts/check_translations.py / check-translations.yml).
 
-if ! command -v cargo >/dev/null 2>&1; then
+# --- 1. formatting ---
+if command -v cargo >/dev/null 2>&1; then
+    if ! cargo fmt --all -- --check; then
+        echo >&2
+        echo "pre-commit: code is not formatted. Run 'cargo fmt', re-stage, and commit again." >&2
+        exit 1
+    fi
+else
     echo "pre-commit: cargo not found; skipping fmt check" >&2
-    exit 0
 fi
 
-if ! cargo fmt --all -- --check; then
-    echo >&2
-    echo "pre-commit: code is not formatted. Run 'cargo fmt', re-stage, and commit again." >&2
-    exit 1
+# --- 2. translations ---
+if command -v python3 >/dev/null 2>&1; then
+    if ! python3 scripts/check_translations.py; then
+        echo >&2
+        echo "pre-commit: untranslated UI strings (see above). Add them in src/i18n.rs." >&2
+        exit 1
+    fi
+else
+    echo "pre-commit: python3 not found; skipping translation check" >&2
 fi

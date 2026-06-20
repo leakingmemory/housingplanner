@@ -1,0 +1,22 @@
+name: Check Translations
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  check-translations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify every UI string is translated in all languages
+        run: python3 scripts/check_translations.py

@@ -171,6 +171,12 @@ pre-commit hook so unformatted commits are blocked locally:
 git config core.hooksPath .githooks
 ```
 
+The pre-commit hook (and the `check-translations.yml` CI workflow) also run
+`scripts/check_translations.py`, which fails if any UI string used via
+`tr(lang, "…")` is missing from one of the language tables in `src/i18n.rs` — so
+new text can't silently fall back to English in another language. Run it directly
+with `python3 scripts/check_translations.py`.
+
 ## Android (optional, extra toolchain required)
 
 The code is already Android-ready: app logic is in the library crate and
