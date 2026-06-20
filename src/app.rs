@@ -78,6 +78,8 @@ pub struct PlannerApp {
     allow_close: bool,
     /// When discarding on close, persist `saved_baseline` (not the dirty plan).
     discarding: bool,
+    /// Show the "file already open in another window" explanation dialog.
+    show_lock_alert: bool,
 }
 
 impl PlannerApp {
@@ -98,11 +100,13 @@ impl PlannerApp {
         let mut current_file: Option<PathBuf> = None;
         let mut current_lock: Option<std::fs::File> = None;
         let mut status = String::new();
+        let mut show_lock_alert = false;
         let mut file_plan: Option<Plan> = None;
         if let Some(path) = &prev_file {
             match try_lock_file(path) {
                 LockOutcome::Busy => {
                     status = tr(lang, "File is open in another instance.").to_owned();
+                    show_lock_alert = true;
                 }
                 outcome => {
                     if let Some(mut p) = std::fs::read_to_string(path)
@@ -154,6 +158,7 @@ impl PlannerApp {
             pending_close: false,
             allow_close: false,
             discarding: false,
+            show_lock_alert,
             plan,
             view_start,
             days_visible: 30,
@@ -221,6 +226,7 @@ impl eframe::App for PlannerApp {
         // Intercept window close while there are unsaved changes.
         self.handle_close(ui.ctx());
         self.close_dialog(ui.ctx());
+        self.lock_alert_dialog(ui.ctx());
     }
 }
 
@@ -303,6 +309,26 @@ impl PlannerApp {
                 }
                 if ui.button(tr(lang, "Cancel")).clicked() {
                     self.pending_close = false;
+                }
+            });
+        });
+    }
+
+    /// Plain-language explanation shown when a file is open in another window.
+    fn lock_alert_dialog(&mut self, ctx: &egui::Context) {
+        if !self.show_lock_alert {
+            return;
+        }
+        let lang = self.lang;
+        egui::Modal::new(egui::Id::new("lock_alert")).show(ctx, |ui| {
+            ui.set_width(380.0);
+            ui.heading(tr(lang, "File already open"));
+            ui.add_space(6.0);
+            ui.label(tr(lang, "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again."));
+            ui.add_space(10.0);
+            ui.vertical_centered(|ui| {
+                if ui.button("OK").clicked() {
+                    self.show_lock_alert = false;
                 }
             });
         });
@@ -593,6 +619,7 @@ impl PlannerApp {
             match try_lock_file(&path) {
                 LockOutcome::Busy => {
                     self.status = tr(lang, "File is open in another instance.").to_owned();
+                    self.show_lock_alert = true;
                     return;
                 }
                 LockOutcome::Acquired(f) => self.current_lock = Some(f),
@@ -616,6 +643,7 @@ impl PlannerApp {
         let lock = match try_lock_file(&path) {
             LockOutcome::Busy => {
                 self.status = tr(lang, "File is open in another instance.").to_owned();
+                self.show_lock_alert = true;
                 return;
             }
             LockOutcome::Acquired(f) => Some(f),

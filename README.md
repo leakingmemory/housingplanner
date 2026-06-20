@@ -44,10 +44,10 @@ The app **reopens the last file on startup**, and **warns before closing if ther
 are unsaved changes** (Save / Discard / Cancel). Loading replaces the current plan.
 
 While a file is open it is **locked against other instances** (an OS lock on a
-per-file sidecar in the temp dir): opening a file that's already open in another
-window/instance is refused with a notice, so two instances can't edit the same
-file at once. The lock is released automatically when the app exits (even on a
-crash).
+per-file sidecar in the temp dir): trying to open a file that's already open in
+another window shows a clear, plain-language dialog explaining that a plan can be
+open in only one window at a time, so two windows can't overwrite each other. The
+lock is released automatically when the app exits (even on a crash).
 
 ## Run (desktop: Linux / Windows / macOS)
 

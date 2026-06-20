@@ -291,6 +291,8 @@ fn sv(en: &'static str) -> &'static str {
         "Cancel" => "Avbryt",
         "untitled" => "namnlös",
         "File is open in another instance." => "Filen är öppen i en annan instans.",
+        "File already open" => "Filen är redan öppen",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Den här planen är redan öppen i ett annat Housing Planner-fönster. För att de två fönstren inte ska skriva över varandras ändringar kan en plan bara vara öppen i ett fönster åt gången. Stäng den i det andra fönstret och försök igen.",
         // Fallback: English
         other => other,
     }
@@ -438,6 +440,8 @@ fn nb(en: &'static str) -> &'static str {
         "Cancel" => "Avbryt",
         "untitled" => "uten navn",
         "File is open in another instance." => "Filen er åpen i en annen instans.",
+        "File already open" => "Filen er allerede åpen",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Denne planen er allerede åpen i et annet Housing Planner-vindu. For at de to vinduene ikke skal overskrive hverandres endringer, kan en plan bare være åpen i ett vindu om gangen. Lukk den i det andre vinduet og prøv igjen.",
         // Fallback: English
         other => other,
     }
@@ -587,6 +591,8 @@ fn nn(en: &'static str) -> &'static str {
         "Cancel" => "Avbryt",
         "untitled" => "utan namn",
         "File is open in another instance." => "Fila er open i ei anna instans.",
+        "File already open" => "Fila er allereie open",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Denne planen er allereie open i eit anna Housing Planner-vindauge. For at dei to vindauga ikkje skal skriva over endringane til kvarandre, kan ein plan berre vera open i eitt vindauge om gongen. Lat han att i det andre vindauget og prøv igjen.",
         // Fallback: English
         other => other,
     }
@@ -738,6 +744,8 @@ fn se(en: &'static str) -> &'static str {
         "Cancel" => "Gaskkalduhte",
         "untitled" => "namahis",
         "File is open in another instance." => "Fiila lea rabas eará instánssas.",
+        "File already open" => "Fiila lea juo rabas",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Dát plána lea juo rabas eará Housing Planner-láses. Vai guokte láse eaba čále badjel guoimmiska rievdadusaid, plána sáhttá leat rabas dušše ovtta láses háválassii. Gidde dan eará láses ja geahččal fas.",
         // Fallback: English
         other => other,
     }
@@ -885,6 +893,8 @@ fn da(en: &'static str) -> &'static str {
         "Cancel" => "Annuller",
         "untitled" => "unavngivet",
         "File is open in another instance." => "Filen er åben i en anden instans.",
+        "File already open" => "Filen er allerede åben",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Denne plan er allerede åben i et andet Housing Planner-vindue. For at de to vinduer ikke overskriver hinandens ændringer, kan en plan kun være åben i ét vindue ad gangen. Luk den i det andet vindue, og prøv igen.",
         // Fallback: English
         other => other,
     }
@@ -1034,6 +1044,8 @@ fn uk(en: &'static str) -> &'static str {
         "Cancel" => "Скасувати",
         "untitled" => "без назви",
         "File is open in another instance." => "Файл відкрито в іншому екземплярі.",
+        "File already open" => "Файл уже відкрито",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Цей план уже відкрито в іншому вікні Housing Planner. Щоб два вікна не перезаписували зміни одне одного, план може бути відкритий лише в одному вікні водночас. Закрийте його в іншому вікні та спробуйте ще раз.",
         // Fallback: English
         other => other,
     }
@@ -1183,6 +1195,8 @@ fn de(en: &'static str) -> &'static str {
         "Cancel" => "Abbrechen",
         "untitled" => "unbenannt",
         "File is open in another instance." => "Die Datei ist in einer anderen Instanz geöffnet.",
+        "File already open" => "Datei bereits geöffnet",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Dieser Plan ist bereits in einem anderen Housing-Planner-Fenster geöffnet. Damit sich die beiden Fenster nicht gegenseitig überschreiben, kann ein Plan immer nur in einem Fenster geöffnet sein. Bitte schließen Sie ihn im anderen Fenster und versuchen Sie es erneut.",
         // Fallback: English
         other => other,
     }
@@ -1334,6 +1348,8 @@ fn fr(en: &'static str) -> &'static str {
         "Cancel" => "Annuler",
         "untitled" => "sans titre",
         "File is open in another instance." => "Le fichier est ouvert dans une autre instance.",
+        "File already open" => "Fichier déjà ouvert",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Ce plan est déjà ouvert dans une autre fenêtre de Housing Planner. Pour éviter que les deux fenêtres n'écrasent leurs modifications respectives, un plan ne peut être ouvert que dans une seule fenêtre à la fois. Veuillez le fermer dans l'autre fenêtre, puis réessayer.",
         // Fallback: English
         other => other,
     }
@@ -1465,6 +1481,8 @@ fn it(en: &'static str) -> &'static str {
         "Cancel" => "Annulla",
         "untitled" => "senza nome",
         "File is open in another instance." => "Il file è aperto in un'altra istanza.",
+        "File already open" => "File già aperto",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Questo piano è già aperto in un'altra finestra di Housing Planner. Per evitare che le due finestre sovrascrivano le rispettive modifiche, un piano può essere aperto in una sola finestra alla volta. Chiudilo nell'altra finestra e riprova.",
         // Fallback: English
         other => other,
     }
@@ -1594,6 +1612,8 @@ fn es(en: &'static str) -> &'static str {
         "Cancel" => "Cancelar",
         "untitled" => "sin título",
         "File is open in another instance." => "El archivo está abierto en otra instancia.",
+        "File already open" => "El archivo ya está abierto",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Este plan ya está abierto en otra ventana de Housing Planner. Para evitar que las dos ventanas sobrescriban los cambios de la otra, un plan solo puede estar abierto en una ventana a la vez. Ciérralo en la otra ventana e inténtalo de nuevo.",
         // Fallback: English
         other => other,
     }
@@ -1721,6 +1741,8 @@ fn nl(en: &'static str) -> &'static str {
         "Cancel" => "Annuleren",
         "untitled" => "naamloos",
         "File is open in another instance." => "Het bestand is geopend in een ander exemplaar.",
+        "File already open" => "Bestand is al geopend",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Dit plan is al geopend in een ander Housing Planner-venster. Om te voorkomen dat de twee vensters elkaars wijzigingen overschrijven, kan een plan maar in één venster tegelijk geopend zijn. Sluit het in het andere venster en probeer het opnieuw.",
         // Fallback: English
         other => other,
     }
@@ -1848,6 +1870,8 @@ fn ru(en: &'static str) -> &'static str {
         "Cancel" => "Отмена",
         "untitled" => "без названия",
         "File is open in another instance." => "Файл открыт в другом экземпляре.",
+        "File already open" => "Файл уже открыт",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Этот план уже открыт в другом окне Housing Planner. Чтобы два окна не перезаписывали изменения друг друга, план может быть открыт только в одном окне одновременно. Закройте его в другом окне и повторите попытку.",
         // Fallback: English
         other => other,
     }
@@ -1975,6 +1999,8 @@ fn isl(en: &'static str) -> &'static str {
         "Cancel" => "Hætta við",
         "untitled" => "ónefnt",
         "File is open in another instance." => "Skráin er opin í öðru tilviki.",
+        "File already open" => "Skráin er þegar opin",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Þessi áætlun er þegar opin í öðrum Housing Planner-glugga. Til að gluggarnir tveir skrifi ekki yfir breytingar hvor annars getur áætlun aðeins verið opin í einum glugga í einu. Lokaðu henni í hinum glugganum og reyndu aftur.",
         // Fallback: English
         other => other,
     }
@@ -2103,6 +2129,8 @@ fn kl(en: &'static str) -> &'static str {
         "Cancel" => "Cancel",
         "untitled" => "untitled",
         "File is open in another instance." => "File is open in another instance.",
+        "File already open" => "File already open",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again.",
         // Fallback: English
         other => other,
     }
@@ -2231,6 +2259,8 @@ fn fo(en: &'static str) -> &'static str {
         "Cancel" => "Angra",
         "untitled" => "ónevnt",
         "File is open in another instance." => "Fílan er opin í øðrum tilviki.",
+        "File already open" => "Fílan er longu opin",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Henda ætlanin er longu opin í øðrum Housing Planner-glugga. Fyri at teir báðir gluggarnir ikki skriva yvir broytingarnar hjá hvørjum øðrum, kann ein ætlan bara vera opin í einum glugga í senn. Lat hana aftur í hinum glugganum og royn aftur.",
         // Fallback: English
         other => other,
     }
@@ -2358,6 +2388,8 @@ fn el(en: &'static str) -> &'static str {
         "Cancel" => "Άκυρο",
         "untitled" => "χωρίς τίτλο",
         "File is open in another instance." => "Το αρχείο είναι ανοιχτό σε άλλο στιγμιότυπο.",
+        "File already open" => "Το αρχείο είναι ήδη ανοιχτό",
+        "This plan is already open in another Housing Planner window. To keep the two windows from overwriting each other's changes, a plan can be open in only one window at a time. Please close it in the other window and try again." => "Αυτό το σχέδιο είναι ήδη ανοιχτό σε άλλο παράθυρο του Housing Planner. Για να μην αντικαθιστούν τα δύο παράθυρα τις αλλαγές το ένα του άλλου, ένα σχέδιο μπορεί να είναι ανοιχτό μόνο σε ένα παράθυρο κάθε φορά. Κλείστε το στο άλλο παράθυρο και προσπαθήστε ξανά.",
         // Fallback: English
         other => other,
     }
