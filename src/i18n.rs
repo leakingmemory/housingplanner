@@ -118,7 +118,6 @@ fn sv(en: &'static str) -> &'static str {
         }
         "Today" => "Idag",
         "Fit to stays" => "Anpassa till vistelser",
-        "💾 Save…" => "💾 Spara…",
         "📂 Load…" => "📂 Öppna…",
         "ℹ About" => "ℹ Om",
         "Language" => "Språk",
@@ -232,6 +231,17 @@ fn sv(en: &'static str) -> &'static str {
         "Loaded plan from file" => "Öppnade plan från fil",
         "Loaded a plan with no change history" => "Öppnade en plan utan ändringshistorik",
         "Undid" => "Ångrade",
+        // Files / close
+        "💾 Save" => "💾 Spara",
+        "Save As…" => "Spara som…",
+        "Unsaved changes" => "Osparade ändringar",
+        "You have unsaved changes. Save before closing?" => {
+            "Du har osparade ändringar. Spara innan du stänger?"
+        }
+        "Save" => "Spara",
+        "Discard" => "Förkasta",
+        "Cancel" => "Avbryt",
+        "untitled" => "namnlös",
         // Fallback: English
         other => other,
     }
@@ -256,7 +266,6 @@ fn nb(en: &'static str) -> &'static str {
         }
         "Today" => "I dag",
         "Fit to stays" => "Tilpass til opphold",
-        "💾 Save…" => "💾 Lagre…",
         "📂 Load…" => "📂 Åpne…",
         "ℹ About" => "ℹ Om",
         "Language" => "Språk",
@@ -368,6 +377,17 @@ fn nb(en: &'static str) -> &'static str {
         "Loaded plan from file" => "Åpnet plan fra fil",
         "Loaded a plan with no change history" => "Åpnet en plan uten endringshistorikk",
         "Undid" => "Angret",
+        // Files / close
+        "💾 Save" => "💾 Lagre",
+        "Save As…" => "Lagre som…",
+        "Unsaved changes" => "Ulagrede endringer",
+        "You have unsaved changes. Save before closing?" => {
+            "Du har ulagrede endringer. Lagre før du lukker?"
+        }
+        "Save" => "Lagre",
+        "Discard" => "Forkast",
+        "Cancel" => "Avbryt",
+        "untitled" => "uten navn",
         // Fallback: English
         other => other,
     }
@@ -392,7 +412,6 @@ fn nn(en: &'static str) -> &'static str {
         }
         "Today" => "I dag",
         "Fit to stays" => "Tilpass til opphald",
-        "💾 Save…" => "💾 Lagre…",
         "📂 Load…" => "📂 Opne…",
         "ℹ About" => "ℹ Om",
         "Language" => "Språk",
@@ -506,6 +525,17 @@ fn nn(en: &'static str) -> &'static str {
         "Loaded plan from file" => "Opna plan frå fil",
         "Loaded a plan with no change history" => "Opna ein plan utan endringshistorikk",
         "Undid" => "Angra",
+        // Files / close
+        "💾 Save" => "💾 Lagre",
+        "Save As…" => "Lagre som…",
+        "Unsaved changes" => "Ulagra endringar",
+        "You have unsaved changes. Save before closing?" => {
+            "Du har ulagra endringar. Lagre før du lukkar?"
+        }
+        "Save" => "Lagre",
+        "Discard" => "Forkast",
+        "Cancel" => "Avbryt",
+        "untitled" => "utan namn",
         // Fallback: English
         other => other,
     }
@@ -532,7 +562,6 @@ fn se(en: &'static str) -> &'static str {
         }
         "Today" => "Odne",
         "Fit to stays" => "Heivet orrumiidda",
-        "💾 Save…" => "💾 Vurke…",
         "📂 Load…" => "📂 Raba…",
         "ℹ About" => "ℹ Birra",
         "Language" => "Giella",
@@ -646,6 +675,17 @@ fn se(en: &'static str) -> &'static str {
         "Loaded plan from file" => "Viežžai plána fiillas",
         "Loaded a plan with no change history" => "Viežžai plána mas ii lean rievdadanhistorjá",
         "Undid" => "Máhcahii",
+        // Files / close
+        "💾 Save" => "💾 Vurke",
+        "Save As…" => "Vurke nugo…",
+        "Unsaved changes" => "Vurkekeahtes rievdadusat",
+        "You have unsaved changes. Save before closing?" => {
+            "Dus leat vurkekeahtes rievdadusat. Háliidatgo vurket ovdal go giddet?"
+        }
+        "Save" => "Vurke",
+        "Discard" => "Hilgo",
+        "Cancel" => "Gaskkalduhte",
+        "untitled" => "namahis",
         // Fallback: English
         other => other,
     }
@@ -670,7 +710,6 @@ fn da(en: &'static str) -> &'static str {
         }
         "Today" => "I dag",
         "Fit to stays" => "Tilpas til ophold",
-        "💾 Save…" => "💾 Gem…",
         "📂 Load…" => "📂 Åbn…",
         "ℹ About" => "ℹ Om",
         "Language" => "Sprog",
@@ -782,6 +821,17 @@ fn da(en: &'static str) -> &'static str {
         "Loaded plan from file" => "Åbnede plan fra fil",
         "Loaded a plan with no change history" => "Åbnede en plan uden ændringshistorik",
         "Undid" => "Fortrød",
+        // Files / close
+        "💾 Save" => "💾 Gem",
+        "Save As…" => "Gem som…",
+        "Unsaved changes" => "Ugemte ændringer",
+        "You have unsaved changes. Save before closing?" => {
+            "Du har ugemte ændringer. Vil du gemme før du lukker?"
+        }
+        "Save" => "Gem",
+        "Discard" => "Kassér",
+        "Cancel" => "Annuller",
+        "untitled" => "unavngivet",
         // Fallback: English
         other => other,
     }
@@ -806,7 +856,6 @@ fn uk(en: &'static str) -> &'static str {
         }
         "Today" => "Сьогодні",
         "Fit to stays" => "Підлаштувати під перебування",
-        "💾 Save…" => "💾 Зберегти…",
         "📂 Load…" => "📂 Відкрити…",
         "ℹ About" => "ℹ Про програму",
         "Language" => "Мова",
@@ -920,6 +969,17 @@ fn uk(en: &'static str) -> &'static str {
         "Loaded plan from file" => "Відкрито план з файлу",
         "Loaded a plan with no change history" => "Відкрито план без історії змін",
         "Undid" => "Скасовано",
+        // Files / close
+        "💾 Save" => "💾 Зберегти",
+        "Save As…" => "Зберегти як…",
+        "Unsaved changes" => "Незбережені зміни",
+        "You have unsaved changes. Save before closing?" => {
+            "У вас є незбережені зміни. Зберегти перед закриттям?"
+        }
+        "Save" => "Зберегти",
+        "Discard" => "Відхилити",
+        "Cancel" => "Скасувати",
+        "untitled" => "без назви",
         // Fallback: English
         other => other,
     }
@@ -944,7 +1004,6 @@ fn de(en: &'static str) -> &'static str {
         }
         "Today" => "Heute",
         "Fit to stays" => "An Aufenthalte anpassen",
-        "💾 Save…" => "💾 Speichern…",
         "📂 Load…" => "📂 Öffnen…",
         "ℹ About" => "ℹ Über",
         "Language" => "Sprache",
@@ -1058,6 +1117,17 @@ fn de(en: &'static str) -> &'static str {
         "Loaded plan from file" => "Plan aus Datei geladen",
         "Loaded a plan with no change history" => "Plan ohne Änderungsverlauf geladen",
         "Undid" => "Rückgängig gemacht",
+        // Files / close
+        "💾 Save" => "💾 Speichern",
+        "Save As…" => "Speichern unter…",
+        "Unsaved changes" => "Ungespeicherte Änderungen",
+        "You have unsaved changes. Save before closing?" => {
+            "Sie haben ungespeicherte Änderungen. Vor dem Schließen speichern?"
+        }
+        "Save" => "Speichern",
+        "Discard" => "Verwerfen",
+        "Cancel" => "Abbrechen",
+        "untitled" => "unbenannt",
         // Fallback: English
         other => other,
     }
@@ -1082,7 +1152,6 @@ fn fr(en: &'static str) -> &'static str {
         }
         "Today" => "Aujourd'hui",
         "Fit to stays" => "Ajuster aux séjours",
-        "💾 Save…" => "💾 Enregistrer…",
         "📂 Load…" => "📂 Ouvrir…",
         "ℹ About" => "ℹ À propos",
         "Language" => "Langue",
@@ -1198,6 +1267,17 @@ fn fr(en: &'static str) -> &'static str {
         "Loaded plan from file" => "Plan chargé depuis un fichier",
         "Loaded a plan with no change history" => "Plan chargé sans historique des modifications",
         "Undid" => "Annulé",
+        // Files / close
+        "💾 Save" => "💾 Enregistrer",
+        "Save As…" => "Enregistrer sous…",
+        "Unsaved changes" => "Modifications non enregistrées",
+        "You have unsaved changes. Save before closing?" => {
+            "Vous avez des modifications non enregistrées. Enregistrer avant de fermer ?"
+        }
+        "Save" => "Enregistrer",
+        "Discard" => "Abandonner",
+        "Cancel" => "Annuler",
+        "untitled" => "sans titre",
         // Fallback: English
         other => other,
     }

@@ -3,6 +3,7 @@
 use chrono::{Datelike, Duration, NaiveDate};
 
 use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 use crate::i18n::{tr, Lang};
 use crate::journal::{self, InverseOp};
@@ -27,6 +28,9 @@ const STORAGE_KEY: &str = "hplan_plan";
 
 /// Storage key for the selected interface language.
 const LANG_KEY: &str = "hplan_lang";
+
+/// Storage key for the path of the file currently open (reopened on next launch).
+const FILE_KEY: &str = "hplan_current_file";
 
 /// Pixel width of a single day column, clamped to this range (shared by the
 /// zoom slider and the Ctrl/Cmd + wheel / pinch zoom).
@@ -61,13 +65,39 @@ pub struct PlannerApp {
     baseline: Plan,
     /// Session undo stack: (journal entry id, how to revert it). Cleared on load.
     undo_stack: Vec<(u64, InverseOp)>,
+    // --- Current file + unsaved-changes tracking ---
+    /// File currently open (saved-to / loaded-from); reopened on next launch.
+    current_file: Option<PathBuf>,
+    /// Plan content as of the last save/open; `plan` differing from it means dirty.
+    saved_baseline: Plan,
+    /// Close-confirmation flow.
+    pending_close: bool,
+    allow_close: bool,
+    /// When discarding on close, persist `saved_baseline` (not the dirty plan).
+    discarding: bool,
 }
 
 impl PlannerApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let plan = cc
+        // The file we had open last time (reopened below, taking precedence).
+        let current_file: Option<PathBuf> = cc
             .storage
-            .and_then(|s| eframe::get_value::<Plan>(s, STORAGE_KEY))
+            .and_then(|s| eframe::get_value::<String>(s, FILE_KEY))
+            .map(PathBuf::from);
+
+        // Prefer reopening that file; fall back to the auto-stored plan.
+        let plan = current_file
+            .as_ref()
+            .and_then(|p| std::fs::read_to_string(p).ok())
+            .and_then(|t| serde_json::from_str::<Plan>(&t).ok())
+            .map(|mut p| {
+                p.reseed_ids();
+                p
+            })
+            .or_else(|| {
+                cc.storage
+                    .and_then(|s| eframe::get_value::<Plan>(s, STORAGE_KEY))
+            })
             .unwrap_or_default();
 
         let today = chrono::Local::now().date_naive();
@@ -97,6 +127,11 @@ impl PlannerApp {
 
         Self {
             baseline: plan.clone(),
+            saved_baseline: plan.clone(),
+            current_file,
+            pending_close: false,
+            allow_close: false,
+            discarding: false,
             plan,
             view_start,
             days_visible: 30,
@@ -118,8 +153,17 @@ impl PlannerApp {
 
 impl eframe::App for PlannerApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, STORAGE_KEY, &self.plan);
+        // On a "Discard" close, persist the last-saved content, not the dirty plan.
+        let plan = if self.discarding {
+            &self.saved_baseline
+        } else {
+            &self.plan
+        };
+        eframe::set_value(storage, STORAGE_KEY, plan);
         eframe::set_value(storage, LANG_KEY, &self.lang);
+        if let Some(p) = &self.current_file {
+            eframe::set_value(storage, FILE_KEY, &p.to_string_lossy().to_string());
+        }
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
@@ -151,6 +195,10 @@ impl eframe::App for PlannerApp {
 
         // After the editors have run, journal any committed edits.
         self.commit_changes(ui.ctx());
+
+        // Intercept window close while there are unsaved changes.
+        self.handle_close(ui.ctx());
+        self.close_dialog(ui.ctx());
     }
 }
 
@@ -187,6 +235,55 @@ impl PlannerApp {
         self.plan.load_sample();
         self.plan.push_log(LogKind::LoadedExample);
         self.baseline = self.plan.clone();
+    }
+
+    /// True if the plan differs from the last saved/opened file content.
+    fn is_dirty(&self) -> bool {
+        !self.plan.content_eq(&self.saved_baseline)
+    }
+
+    /// Intercept a window-close request when there are unsaved changes.
+    fn handle_close(&mut self, ctx: &egui::Context) {
+        if ctx.input(|i| i.viewport().close_requested()) {
+            if self.allow_close || !self.is_dirty() {
+                return; // let the close proceed
+            }
+            self.pending_close = true;
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+        }
+    }
+
+    /// The "save before closing?" modal, shown while a close is pending.
+    fn close_dialog(&mut self, ctx: &egui::Context) {
+        if !self.pending_close {
+            return;
+        }
+        let lang = self.lang;
+        egui::Modal::new(egui::Id::new("unsaved_close")).show(ctx, |ui| {
+            ui.set_width(360.0);
+            ui.heading(tr(lang, "Unsaved changes"));
+            ui.label(tr(lang, "You have unsaved changes. Save before closing?"));
+            ui.add_space(8.0);
+            ui.horizontal(|ui| {
+                if ui.button(tr(lang, "Save")).clicked() {
+                    self.save_current();
+                    if !self.is_dirty() {
+                        self.allow_close = true;
+                        self.pending_close = false;
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                }
+                if ui.button(tr(lang, "Discard")).clicked() {
+                    self.discarding = true;
+                    self.allow_close = true;
+                    self.pending_close = false;
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                }
+                if ui.button(tr(lang, "Cancel")).clicked() {
+                    self.pending_close = false;
+                }
+            });
+        });
     }
 
     fn changelog_tab(&mut self, ui: &mut egui::Ui) {
@@ -353,11 +450,29 @@ impl PlannerApp {
                 }
 
                 ui.separator();
-                if ui.button(tr(lang, "💾 Save…")).clicked() {
-                    self.save_to_file();
+                if ui.button(tr(lang, "💾 Save")).clicked() {
+                    self.save_current();
+                }
+                if ui.button(tr(lang, "Save As…")).clicked() {
+                    self.save_as();
                 }
                 if ui.button(tr(lang, "📂 Load…")).clicked() {
                     self.load_from_file();
+                }
+
+                // Current file name + an unsaved-changes dot.
+                ui.separator();
+                let name = self
+                    .current_file
+                    .as_ref()
+                    .and_then(|p| p.file_name())
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_else(|| tr(lang, "untitled").to_owned());
+                let dirty = self.is_dirty();
+                let label = if dirty { format!("{name} ●") } else { name };
+                let resp = ui.label(egui::RichText::new(label).weak());
+                if dirty {
+                    resp.on_hover_text(tr(lang, "Unsaved changes"));
                 }
 
                 if !self.status.is_empty() {
@@ -397,24 +512,60 @@ impl PlannerApp {
             .show(ctx, |ui| about_contents(ui, logo.as_ref(), lang));
     }
 
-    /// Prompt for a path and write the current plan as JSON.
+    /// Write the current plan as JSON to `path`. On success this becomes the
+    /// current file and the saved baseline (clearing the dirty state).
     #[cfg(not(target_os = "android"))]
-    fn save_to_file(&mut self) {
+    fn write_to(&mut self, path: &Path) -> bool {
         let lang = self.lang;
+        match serde_json::to_string_pretty(&self.plan) {
+            Ok(json) => match std::fs::write(path, json) {
+                Ok(()) => {
+                    self.current_file = Some(path.to_path_buf());
+                    self.saved_baseline = self.plan.clone();
+                    self.status = format!("{} {}", tr(lang, "Saved →"), path.display());
+                    true
+                }
+                Err(e) => {
+                    self.status = format!("{} {e}", tr(lang, "Save failed:"));
+                    false
+                }
+            },
+            Err(e) => {
+                self.status = format!("{} {e}", tr(lang, "Encode failed:"));
+                false
+            }
+        }
+    }
+
+    /// Save to the current file if one is open, otherwise prompt (Save As).
+    #[cfg(not(target_os = "android"))]
+    fn save_current(&mut self) {
+        match self.current_file.clone() {
+            Some(path) => {
+                self.write_to(&path);
+            }
+            None => self.save_as(),
+        }
+    }
+
+    /// Always prompt for a path, then save there.
+    #[cfg(not(target_os = "android"))]
+    fn save_as(&mut self) {
+        let lang = self.lang;
+        let start_name = self
+            .current_file
+            .as_ref()
+            .and_then(|p| p.file_name())
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "plan.json".to_owned());
         let Some(path) = rfd::FileDialog::new()
             .add_filter(tr(lang, "Housing Planner plan"), &["json"])
-            .set_file_name("plan.json")
+            .set_file_name(start_name)
             .save_file()
         else {
             return; // user cancelled
         };
-        match serde_json::to_string_pretty(&self.plan) {
-            Ok(json) => match std::fs::write(&path, json) {
-                Ok(()) => self.status = format!("{} {}", tr(lang, "Saved →"), path.display()),
-                Err(e) => self.status = format!("{} {e}", tr(lang, "Save failed:")),
-            },
-            Err(e) => self.status = format!("{} {e}", tr(lang, "Encode failed:")),
-        }
+        self.write_to(&path);
     }
 
     /// Prompt for a path and replace the current plan with one loaded from JSON.
@@ -456,6 +607,9 @@ impl PlannerApp {
                 } else {
                     LogKind::LoadedFileNoHistory { name }
                 });
+                // This becomes the current file; nothing unsaved yet.
+                self.current_file = Some(path.clone());
+                self.saved_baseline = self.plan.clone();
                 // Session undo restarts for the freshly loaded plan.
                 self.undo_stack.clear();
                 self.baseline = self.plan.clone();
@@ -468,8 +622,12 @@ impl PlannerApp {
     // On Android the native file picker needs the activity/intents plumbing;
     // for now these are no-ops there (auto-persistence still applies).
     #[cfg(target_os = "android")]
-    fn save_to_file(&mut self) {
+    fn save_current(&mut self) {
         self.status = tr(self.lang, "File save is not available on Android yet.").to_owned();
+    }
+    #[cfg(target_os = "android")]
+    fn save_as(&mut self) {
+        self.save_current();
     }
     #[cfg(target_os = "android")]
     fn load_from_file(&mut self) {

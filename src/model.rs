@@ -219,6 +219,15 @@ impl Plan {
         id
     }
 
+    /// Compare only the user-editable content (housings/groups/persons/stays),
+    /// ignoring the journal and id counters — used for dirty detection.
+    pub fn content_eq(&self, other: &Plan) -> bool {
+        self.housings == other.housings
+            && self.groups == other.groups
+            && self.persons == other.persons
+            && self.stays == other.stays
+    }
+
     pub fn housing(&self, id: Id) -> Option<&Housing> {
         self.housings.iter().find(|h| h.id == id)
     }
@@ -723,6 +732,26 @@ mod tests {
         let json = serde_json::to_string(&plan).expect("serialize");
         let back: Plan = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(back.changelog.len(), 2);
+    }
+
+    #[test]
+    fn content_eq_ignores_journal_but_not_data() {
+        let mut a = Plan::default();
+        let h = a.new_id();
+        a.housings.push(Housing {
+            id: h,
+            name: "H".into(),
+            capacity: 2,
+            notes: String::new(),
+        });
+        let mut b = a.clone();
+        assert!(a.content_eq(&b));
+        // Journal/id differences are ignored.
+        b.push_log(LogKind::LoadedExample);
+        assert!(a.content_eq(&b));
+        // A real data change is detected.
+        b.housings[0].capacity = 4;
+        assert!(!a.content_eq(&b));
     }
 
     #[test]
