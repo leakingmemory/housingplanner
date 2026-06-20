@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 
 # Source files that call tr(...).
-CALL_FILES = ["app.rs", "timeline.rs", "model.rs"]
+CALL_FILES = ["app.rs", "timeline.rs", "model.rs", "journal.rs"]
 
 # A Rust string literal (handles escaped quotes).
 STRING = r'"((?:[^"\\]|\\.)*)"'

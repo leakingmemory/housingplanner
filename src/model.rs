@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub type Id = u64;
 
 /// A place people can stay.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Housing {
     pub id: Id,
     pub name: String,
@@ -22,7 +22,7 @@ pub struct Housing {
 }
 
 /// A named group of people (e.g. a family or a team). Drawn in its own color.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Group {
     pub id: Id,
     pub name: String,
@@ -31,7 +31,7 @@ pub struct Group {
 }
 
 /// A single person, optionally belonging to a [`Group`].
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Person {
     pub id: Id,
     pub name: String,
@@ -49,13 +49,118 @@ pub enum Subject {
 ///
 /// The range is treated as half-open in days: `arrival` is the first night and
 /// `departure` is the checkout day (so a same-day arrival/departure is 0 nights).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Stay {
     pub id: Id,
     pub subject: Subject,
     pub housing: Id,
     pub arrival: NaiveDate,
     pub departure: NaiveDate,
+}
+
+/// A single entry in the persisted change journal.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LogEntry {
+    /// Stable change id (see [`Plan::new_log_id`]). An [`LogKind::Undo`] entry
+    /// references the id of the change it reverted.
+    pub id: u64,
+    /// When the change happened, RFC 3339 (local time).
+    pub time: String,
+    pub kind: LogKind,
+}
+
+/// The structured content of a [`LogEntry`]. Carries the names/values needed to
+/// render a (localized) human description even after the entity is gone.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LogKind {
+    AddHousing {
+        name: String,
+    },
+    DeleteHousing {
+        name: String,
+    },
+    RenameHousing {
+        from: String,
+        to: String,
+    },
+    SetCapacity {
+        name: String,
+        from: u32,
+        to: u32,
+    },
+    EditNotes {
+        name: String,
+    },
+
+    AddGroup {
+        name: String,
+    },
+    DeleteGroup {
+        name: String,
+    },
+    RenameGroup {
+        from: String,
+        to: String,
+    },
+    SetGroupColor {
+        name: String,
+    },
+
+    AddPerson {
+        name: String,
+    },
+    DeletePerson {
+        name: String,
+    },
+    RenamePerson {
+        from: String,
+        to: String,
+    },
+    SetPersonGroup {
+        person: String,
+        from: String,
+        to: String,
+    },
+
+    AddStay {
+        subject: String,
+        housing: String,
+    },
+    RemoveStay {
+        subject: String,
+        housing: String,
+    },
+    MoveStay {
+        subject: String,
+        from: String,
+        to: String,
+    },
+    ChangeStaySubject {
+        from: String,
+        to: String,
+        housing: String,
+    },
+    ChangeStayDates {
+        subject: String,
+        housing: String,
+        from: String,
+        to: String,
+    },
+
+    LoadedExample,
+    LoadedFile {
+        name: String,
+    },
+    LoadedFileNoHistory {
+        name: String,
+    },
+    Undo {
+        undoes: u64,
+    },
+}
+
+fn default_next_log_id() -> u64 {
+    1
 }
 
 /// The whole planning document. This is the unit of persistence.
@@ -66,6 +171,12 @@ pub struct Plan {
     pub persons: Vec<Person>,
     pub stays: Vec<Stay>,
     next_id: Id,
+    /// Append-only change journal. `serde(default)` keeps pre-journal files
+    /// loadable (empty log); old apps ignore this unknown field.
+    #[serde(default)]
+    pub changelog: Vec<LogEntry>,
+    #[serde(default = "default_next_log_id")]
+    next_log_id: u64,
 }
 
 impl Default for Plan {
@@ -76,6 +187,8 @@ impl Default for Plan {
             persons: Vec::new(),
             stays: Vec::new(),
             next_id: 1,
+            changelog: Vec::new(),
+            next_log_id: 1,
         }
     }
 }
@@ -85,6 +198,24 @@ impl Plan {
     pub fn new_id(&mut self) -> Id {
         let id = self.next_id;
         self.next_id += 1;
+        id
+    }
+
+    /// Allocate a fresh change-journal id.
+    pub fn new_log_id(&mut self) -> u64 {
+        let id = self.next_log_id;
+        self.next_log_id += 1;
+        id
+    }
+
+    /// Append a journal entry for `kind` (stamping id + local time); returns its id.
+    pub fn push_log(&mut self, kind: LogKind) -> u64 {
+        let id = self.new_log_id();
+        self.changelog.push(LogEntry {
+            id,
+            time: chrono::Local::now().to_rfc3339(),
+            kind,
+        });
         id
     }
 
@@ -235,6 +366,11 @@ impl Plan {
             .unwrap_or(0);
         if self.next_id <= max {
             self.next_id = max + 1;
+        }
+
+        let max_log = self.changelog.iter().map(|e| e.id).max().unwrap_or(0);
+        if self.next_log_id <= max_log {
+            self.next_log_id = max_log + 1;
         }
     }
 
@@ -575,6 +711,26 @@ mod tests {
         assert!(!plan.stay_includes_person(&grp, outsider));
 
         assert_eq!(plan.persons_in_group(g).len(), 1);
+    }
+
+    #[test]
+    fn plan_changelog_round_trips() {
+        let mut plan = Plan::default();
+        plan.push_log(LogKind::LoadedExample);
+        plan.push_log(LogKind::AddGroup {
+            name: "Crew".into(),
+        });
+        let json = serde_json::to_string(&plan).expect("serialize");
+        let back: Plan = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(back.changelog.len(), 2);
+    }
+
+    #[test]
+    fn loads_legacy_plan_without_changelog() {
+        // A plan file from before the journal feature: no changelog/next_log_id.
+        let json = r#"{"housings":[],"groups":[],"persons":[],"stays":[],"next_id":1}"#;
+        let plan: Plan = serde_json::from_str(json).expect("legacy plan loads");
+        assert!(plan.changelog.is_empty());
     }
 
     #[test]

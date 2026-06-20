@@ -5,6 +5,7 @@
 
 pub mod app;
 pub mod i18n;
+pub mod journal;
 pub mod licenses;
 pub mod model;
 pub mod timeline;

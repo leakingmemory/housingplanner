@@ -76,6 +76,14 @@ repository secret. The snap version in `snap/snapcraft.yaml` is kept in sync wit
   timeline of their whereabouts (own stays **plus** any group they belong to).
 - **🏠 Housings** — pick a housing; edit capacity/notes, manage its stays, and see
   that single housing's timeline (with the over-capacity hatch).
+- **📜 Changelog** — an auditable journal of every edit (create/rename/delete,
+  capacity, membership, stays, …), with a localized description and timestamp.
+  The journal is **saved inside the plan file** and survives reload. **↩ Undo
+  last change** reverts the most recent change (for changes made in the current
+  session) and logs an `Undo` entry referencing the change's id. Loading a plan
+  saved before this feature adds a "no change history" entry. Old apps still read
+  newer files (the journal is an ignored extra field), and this app still reads
+  pre-journal files.
 
 ### Top bar controls
 - **From** — first date shown.
@@ -202,7 +210,8 @@ cargo apk run --lib
 |------|---------|
 | `src/model.rs` | Data types (`Housing`, `Group`, `Person`, `Stay`, `Plan`) + helpers |
 | `src/timeline.rs` | The Gantt-style timeline rendering |
-| `src/app.rs` | eframe `App`: Overview/Groups/Persons/Housings tabs + per-tab timeline + About window |
+| `src/app.rs` | eframe `App`: Overview/Groups/Persons/Housings/Changelog tabs + per-tab timeline + About window |
+| `src/journal.rs` | Change-journal engine: diff → entries, session-undo inverses, localized descriptions |
 | `src/licenses.rs` | Embedded app + dependency license attribution |
 | `src/main.rs` | Desktop entry point (incl. `--licenses` flag) |
 | `src/lib.rs` | Shared library + Android `android_main` entry |

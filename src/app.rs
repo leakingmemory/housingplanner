@@ -5,8 +5,9 @@ use chrono::{Datelike, Duration, NaiveDate};
 use std::collections::HashSet;
 
 use crate::i18n::{tr, Lang};
+use crate::journal::{self, InverseOp};
 use crate::licenses;
-use crate::model::{Group, Housing, Id, Person, Plan, Stay, Subject, GROUP_PALETTE};
+use crate::model::{Group, Housing, Id, LogKind, Person, Plan, Stay, Subject, GROUP_PALETTE};
 use crate::timeline;
 
 /// The active workspace tab.
@@ -16,6 +17,7 @@ enum Tab {
     Groups,
     Persons,
     Housings,
+    Changelog,
 }
 
 /// Storage key used for `eframe`'s built-in cross-platform persistence.
@@ -54,6 +56,11 @@ pub struct PlannerApp {
     selected_group: Option<Id>,
     selected_person: Option<Id>,
     selected_housing: Option<Id>,
+    // --- Change journal (not persisted; the journal itself lives in `plan`) ---
+    /// Last-journaled plan content; diffed against `plan` to detect changes.
+    baseline: Plan,
+    /// Session undo stack: (journal entry id, how to revert it). Cleared on load.
+    undo_stack: Vec<(u64, InverseOp)>,
 }
 
 impl PlannerApp {
@@ -89,6 +96,7 @@ impl PlannerApp {
             });
 
         Self {
+            baseline: plan.clone(),
             plan,
             view_start,
             days_visible: 30,
@@ -103,6 +111,7 @@ impl PlannerApp {
             selected_group: None,
             selected_person: None,
             selected_housing: None,
+            undo_stack: Vec::new(),
         }
     }
 }
@@ -124,6 +133,11 @@ impl eframe::App for PlannerApp {
                 ui.selectable_value(&mut self.active_tab, Tab::Groups, tr(lang, "👥 Groups"));
                 ui.selectable_value(&mut self.active_tab, Tab::Persons, tr(lang, "🧍 Persons"));
                 ui.selectable_value(&mut self.active_tab, Tab::Housings, tr(lang, "🏠 Housings"));
+                ui.selectable_value(
+                    &mut self.active_tab,
+                    Tab::Changelog,
+                    tr(lang, "📜 Changelog"),
+                );
             });
         });
 
@@ -132,11 +146,120 @@ impl eframe::App for PlannerApp {
             Tab::Groups => self.groups_tab(ui),
             Tab::Persons => self.persons_tab(ui),
             Tab::Housings => self.housings_tab(ui),
+            Tab::Changelog => self.changelog_tab(ui),
         }
+
+        // After the editors have run, journal any committed edits.
+        self.commit_changes(ui.ctx());
     }
 }
 
 impl PlannerApp {
+    /// Diff the plan against the baseline at a commit boundary and journal any
+    /// changes. Skipped while the user is mid-edit (a text field has focus or a
+    /// drag is in progress) so an edit is logged once, on commit.
+    fn commit_changes(&mut self, ctx: &egui::Context) {
+        if ctx.egui_wants_keyboard_input() || ctx.egui_is_using_pointer() {
+            return;
+        }
+        let changes = journal::diff(&self.baseline, &self.plan);
+        if changes.is_empty() {
+            return;
+        }
+        for ch in changes {
+            let id = self.plan.push_log(ch.kind);
+            self.undo_stack.push((id, ch.inverse));
+        }
+        self.baseline = self.plan.clone();
+    }
+
+    /// Revert the most recent change and log an `Undo` entry referencing it.
+    fn undo_last(&mut self) {
+        if let Some((id, inverse)) = self.undo_stack.pop() {
+            journal::apply_inverse(&mut self.plan, &inverse);
+            self.plan.push_log(LogKind::Undo { undoes: id });
+            self.baseline = self.plan.clone();
+        }
+    }
+
+    /// Load the bundled example, logged as a single event (not entity-by-entity).
+    fn load_example(&mut self) {
+        self.plan.load_sample();
+        self.plan.push_log(LogKind::LoadedExample);
+        self.baseline = self.plan.clone();
+    }
+
+    fn changelog_tab(&mut self, ui: &mut egui::Ui) {
+        let lang = self.lang;
+        egui::Panel::top("changelog_top").show_inside(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.add_enabled_ui(!self.undo_stack.is_empty(), |ui| {
+                    if ui.button(tr(lang, "↩ Undo last change")).clicked() {
+                        self.undo_last();
+                    }
+                });
+                ui.separator();
+                ui.label(format!(
+                    "{} {}",
+                    self.plan.changelog.len(),
+                    tr(lang, "entries")
+                ));
+            });
+        });
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            if self.plan.changelog.is_empty() {
+                centered_hint(ui, tr(lang, "No changes yet."));
+                return;
+            }
+            // ids referenced by a later Undo entry → shown as undone.
+            let undone: HashSet<u64> = self
+                .plan
+                .changelog
+                .iter()
+                .filter_map(|e| match e.kind {
+                    LogKind::Undo { undoes } => Some(undoes),
+                    _ => None,
+                })
+                .collect();
+            // Newest first.
+            let rows: Vec<(String, String, bool, bool)> = self
+                .plan
+                .changelog
+                .iter()
+                .rev()
+                .map(|e| {
+                    (
+                        short_time(&e.time),
+                        journal::describe(e, &self.plan.changelog, lang),
+                        undone.contains(&e.id),
+                        matches!(e.kind, LogKind::Undo { .. }),
+                    )
+                })
+                .collect();
+            let row_h = ui.text_style_height(&egui::TextStyle::Body) + 6.0;
+            egui::ScrollArea::vertical().auto_shrink(false).show_rows(
+                ui,
+                row_h,
+                rows.len(),
+                |ui, range| {
+                    for (time, desc, was_undone, is_undo) in &rows[range] {
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new(time).weak().monospace());
+                            let mut rt = egui::RichText::new(desc);
+                            if *was_undone {
+                                rt = rt.strikethrough().weak();
+                            }
+                            if *is_undo {
+                                rt = rt.italics();
+                            }
+                            ui.label(rt);
+                        });
+                    }
+                },
+            );
+        });
+    }
+
     /// Ctrl/Cmd + wheel (or trackpad pinch) zooms the day width, anchored on the
     /// date under the pointer so it stays put. egui zeroes the scroll delta when
     /// the zoom modifier is held, so the surrounding scroll area doesn't move.
@@ -311,6 +434,11 @@ impl PlannerApp {
                 return;
             }
         };
+        // Detect whether the file already carried a change journal.
+        let had_history = serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| v.get("changelog").cloned())
+            .is_some();
         match serde_json::from_str::<crate::model::Plan>(&text) {
             Ok(mut plan) => {
                 plan.reseed_ids();
@@ -319,6 +447,18 @@ impl PlannerApp {
                     .map(|d| d - Duration::days(2))
                     .unwrap_or_else(|| chrono::Local::now().date_naive());
                 self.plan = plan;
+                let name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                self.plan.push_log(if had_history {
+                    LogKind::LoadedFile { name }
+                } else {
+                    LogKind::LoadedFileNoHistory { name }
+                });
+                // Session undo restarts for the freshly loaded plan.
+                self.undo_stack.clear();
+                self.baseline = self.plan.clone();
                 self.status = format!("{} {}", tr(lang, "Loaded ←"), path.display());
             }
             Err(e) => self.status = format!("{} {e}", tr(lang, "Parse failed:")),
@@ -380,7 +520,7 @@ impl PlannerApp {
                     ));
                     ui.add_space(6.0);
                     if ui.button(tr(lang, "📋 Load example data")).clicked() {
-                        self.plan.load_sample();
+                        self.load_example();
                     }
                 });
             });
@@ -771,6 +911,13 @@ fn date_edit(ui: &mut egui::Ui, date: &mut NaiveDate) {
 }
 
 /// Number of days in the given month.
+/// Compact "MM-DD HH:MM" rendering of an RFC 3339 timestamp for the changelog.
+fn short_time(rfc3339: &str) -> String {
+    chrono::DateTime::parse_from_rfc3339(rfc3339)
+        .map(|dt| dt.format("%m-%d %H:%M").to_string())
+        .unwrap_or_else(|_| rfc3339.to_owned())
+}
+
 fn days_in_month(year: i32, month: u32) -> u32 {
     let (ny, nm) = if month == 12 {
         (year + 1, 1)
