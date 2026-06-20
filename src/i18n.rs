@@ -23,6 +23,7 @@ pub enum Lang {
     Dutch,
     Russian,
     Icelandic,
+    Greenlandic,
 }
 
 impl Default for Lang {
@@ -33,7 +34,7 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 14] = [
+    pub const ALL: [Lang; 15] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
@@ -48,6 +49,7 @@ impl Lang {
         Lang::Dutch,
         Lang::Russian,
         Lang::Icelandic,
+        Lang::Greenlandic,
     ];
 
     /// Native name shown in the language picker.
@@ -67,6 +69,7 @@ impl Lang {
             Lang::Dutch => "Nederlands",
             Lang::Russian => "Русский",
             Lang::Icelandic => "Íslenska",
+            Lang::Greenlandic => "Kalaallisut",
         }
     }
 
@@ -103,6 +106,8 @@ impl Lang {
             Lang::Russian
         } else if v.starts_with("is") {
             Lang::Icelandic
+        } else if v.starts_with("kl") {
+            Lang::Greenlandic
         } else {
             Lang::English
         }
@@ -126,6 +131,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::Dutch => nl(en),
         Lang::Russian => ru(en),
         Lang::Icelandic => isl(en),
+        Lang::Greenlandic => kl(en),
     }
 }
 
@@ -1944,6 +1950,133 @@ fn isl(en: &'static str) -> &'static str {
         "Discard" => "Henda",
         "Cancel" => "Hætta við",
         "untitled" => "ónefnt",
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Greenlandic (Kalaallisut) translations.
+///
+/// STUB / best-effort: only a few high-confidence strings are translated; the
+/// rest intentionally equal English. Needs review/completion by a Kalaallisut
+/// speaker.
+fn kl(en: &'static str) -> &'static str {
+    match en {
+        "📊 Overview" => "📊 Overview",
+        "👥 Groups" => "👥 Groups",
+        "🧍 Persons" => "🧍 Inuit",
+        "🏠 Housings" => "🏠 Illut",
+        "From:" => "From:",
+        "Days:" => "Ullut:",
+        "Zoom:" => "Zoom:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline"
+        }
+        "Today" => "Ullumi",
+        "Fit to stays" => "Fit to stays",
+        "📂 Load…" => "📂 Load…",
+        "ℹ About" => "ℹ Pillugu",
+        "Language" => "Oqaatsit",
+        "Saved →" => "Saved →",
+        "Loaded ←" => "Loaded ←",
+        "Save failed:" => "Save failed:",
+        "Encode failed:" => "Encode failed:",
+        "Read failed:" => "Read failed:",
+        "Parse failed:" => "Parse failed:",
+        "File save is not available on Android yet." => {
+            "File save is not available on Android yet."
+        }
+        "File load is not available on Android yet." => {
+            "File load is not available on Android yet."
+        }
+        "Housing Planner plan" => "Housing Planner plan",
+        "About / Licenses" => "About / Licenses",
+        "Version" => "Version",
+        "Plan who stays where, and when." => "Plan who stays where, and when.",
+        "📋 Copy dependency licenses" => "📋 Copy dependency licenses",
+        "This application" => "This application",
+        "Third-party dependencies" => "Third-party dependencies",
+        "Welcome to Housing Planner" => "Tikilluarit Housing Planner-mut",
+        "Add housings, groups and people in the tabs above —" => {
+            "Add housings, groups and people in the tabs above —"
+        }
+        "📋 Load example data" => "📋 Load example data",
+        "Add a housing in the Housings tab to start planning." => {
+            "Add a housing in the Housings tab to start planning."
+        }
+        "Group" => "Group",
+        "Person" => "Inuk",
+        "Housing" => "Illu",
+        "➕ New" => "➕ New",
+        "Stays:" => "Stays:",
+        "Stays (individual):" => "Stays (individual):",
+        "➕ Add stay" => "➕ Add stay",
+        "Add a housing and a person/group first." => "Add a housing and a person/group first.",
+        "(no stays)" => "(no stays)",
+        "(group)" => "(group)",
+        "No groups yet — add one." => "No groups yet — add one.",
+        "🗑 Delete group" => "🗑 Delete group",
+        "Members:" => "Members:",
+        "(no members)" => "(no members)",
+        "➕ Add existing…" => "➕ Add existing…",
+        "➕ New person" => "➕ New person",
+        "Select or create a group." => "Select or create a group.",
+        "No stays for this group yet." => "No stays for this group yet.",
+        "No persons yet — add one." => "No persons yet — add one.",
+        "— no group —" => "— no group —",
+        "🗑 Delete person" => "🗑 Delete person",
+        "Select or create a person." => "Select or create a person.",
+        "No stays for this person yet." => "No stays for this person yet.",
+        "No housings yet — add one." => "No housings yet — add one.",
+        "Capacity" => "Capacity",
+        "Notes:" => "Notes:",
+        "🗑 Delete housing" => "🗑 Delete housing",
+        "Select or create a housing." => "Select or create a housing.",
+        "No stays in this housing yet." => "No stays in this housing yet.",
+        "cap" => "cap",
+        "To:" => "To:",
+        "Nights:" => "Unnuat:",
+        "People:" => "Inuit:",
+        "⚠ Also booked elsewhere at the same time" => "⚠ Also booked elsewhere at the same time",
+        "<deleted person>" => "<deleted person>",
+        "<deleted group>" => "<deleted group>",
+        "📜 Changelog" => "📜 Changelog",
+        "↩ Undo last change" => "↩ Undo last change",
+        "entries" => "entries",
+        "No changes yet." => "No changes yet.",
+        "(no group)" => "(no group)",
+        "Created housing" => "Created housing",
+        "Deleted housing" => "Deleted housing",
+        "Renamed housing" => "Renamed housing",
+        "Changed capacity of" => "Changed capacity of",
+        "Edited notes of" => "Edited notes of",
+        "Created group" => "Created group",
+        "Deleted group" => "Deleted group",
+        "Renamed group" => "Renamed group",
+        "Changed colour of" => "Changed colour of",
+        "Added person" => "Added person",
+        "Deleted person" => "Deleted person",
+        "Renamed person" => "Renamed person",
+        "Changed group of" => "Changed group of",
+        "Added stay" => "Added stay",
+        "Removed stay" => "Removed stay",
+        "Moved stay" => "Moved stay",
+        "Changed occupant of stay" => "Changed occupant of stay",
+        "Changed dates of stay" => "Changed dates of stay",
+        "Loaded example data" => "Loaded example data",
+        "Loaded plan from file" => "Loaded plan from file",
+        "Loaded a plan with no change history" => "Loaded a plan with no change history",
+        "Undid" => "Undid",
+        "💾 Save" => "💾 Save",
+        "Save As…" => "Save As…",
+        "Unsaved changes" => "Unsaved changes",
+        "You have unsaved changes. Save before closing?" => {
+            "You have unsaved changes. Save before closing?"
+        }
+        "Save" => "Save",
+        "Discard" => "Discard",
+        "Cancel" => "Cancel",
+        "untitled" => "untitled",
         // Fallback: English
         other => other,
     }
