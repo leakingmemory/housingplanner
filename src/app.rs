@@ -68,6 +68,9 @@ pub struct PlannerApp {
     // --- Current file + unsaved-changes tracking ---
     /// File currently open (saved-to / loaded-from); reopened on next launch.
     current_file: Option<PathBuf>,
+    /// Held lock (on a temp sidecar) for `current_file`, so another instance
+    /// can't open it. The OS releases it when this handle drops (incl. on exit).
+    current_lock: Option<std::fs::File>,
     /// Plan content as of the last save/open; `plan` differing from it means dirty.
     saved_baseline: Plan,
     /// Close-confirmation flow.
@@ -79,21 +82,45 @@ pub struct PlannerApp {
 
 impl PlannerApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // The file we had open last time (reopened below, taking precedence).
-        let current_file: Option<PathBuf> = cc
+        // Persisted language, defaulting to the system locale on first run.
+        let lang = cc
+            .storage
+            .and_then(|s| eframe::get_value::<Lang>(s, LANG_KEY))
+            .unwrap_or_else(Lang::from_env);
+
+        // Reopen the file we had open last time, taking an exclusive lock so a
+        // second instance can't open the same file. Falls back to the auto-stored
+        // plan (and, if the file is locked elsewhere, starts without it).
+        let prev_file: Option<PathBuf> = cc
             .storage
             .and_then(|s| eframe::get_value::<String>(s, FILE_KEY))
             .map(PathBuf::from);
+        let mut current_file: Option<PathBuf> = None;
+        let mut current_lock: Option<std::fs::File> = None;
+        let mut status = String::new();
+        let mut file_plan: Option<Plan> = None;
+        if let Some(path) = &prev_file {
+            match try_lock_file(path) {
+                LockOutcome::Busy => {
+                    status = tr(lang, "File is open in another instance.").to_owned();
+                }
+                outcome => {
+                    if let Some(mut p) = std::fs::read_to_string(path)
+                        .ok()
+                        .and_then(|t| serde_json::from_str::<Plan>(&t).ok())
+                    {
+                        p.reseed_ids();
+                        file_plan = Some(p);
+                        current_file = Some(path.clone());
+                        if let LockOutcome::Acquired(f) = outcome {
+                            current_lock = Some(f);
+                        }
+                    }
+                }
+            }
+        }
 
-        // Prefer reopening that file; fall back to the auto-stored plan.
-        let plan = current_file
-            .as_ref()
-            .and_then(|p| std::fs::read_to_string(p).ok())
-            .and_then(|t| serde_json::from_str::<Plan>(&t).ok())
-            .map(|mut p| {
-                p.reseed_ids();
-                p
-            })
+        let plan = file_plan
             .or_else(|| {
                 cc.storage
                     .and_then(|s| eframe::get_value::<Plan>(s, STORAGE_KEY))
@@ -105,12 +132,6 @@ impl PlannerApp {
             .earliest_arrival()
             .map(|d| d - Duration::days(2))
             .unwrap_or(today);
-
-        // Persisted language, defaulting to the system locale on first run.
-        let lang = cc
-            .storage
-            .and_then(|s| eframe::get_value::<Lang>(s, LANG_KEY))
-            .unwrap_or_else(Lang::from_env);
 
         // Decode the embedded icon PNG into a texture for the About window
         // (reuses eframe's PNG decoder, so no extra image dependency).
@@ -129,6 +150,7 @@ impl PlannerApp {
             baseline: plan.clone(),
             saved_baseline: plan.clone(),
             current_file,
+            current_lock,
             pending_close: false,
             allow_close: false,
             discarding: false,
@@ -138,7 +160,7 @@ impl PlannerApp {
             day_width: 26.0,
             pan_remainder: 0.0,
             zoom_remainder: 0.0,
-            status: String::new(),
+            status,
             licenses_open: false,
             logo,
             lang,
@@ -565,6 +587,18 @@ impl PlannerApp {
         else {
             return; // user cancelled
         };
+        // Take the lock for the new target before overwriting it (unless it is
+        // already our current, locked file).
+        if self.current_file.as_deref() != Some(path.as_path()) {
+            match try_lock_file(&path) {
+                LockOutcome::Busy => {
+                    self.status = tr(lang, "File is open in another instance.").to_owned();
+                    return;
+                }
+                LockOutcome::Acquired(f) => self.current_lock = Some(f),
+                LockOutcome::Unsupported => self.current_lock = None,
+            }
+        }
         self.write_to(&path);
     }
 
@@ -578,11 +612,20 @@ impl PlannerApp {
         else {
             return; // user cancelled
         };
+        // Take the single-instance lock before opening; refuse if held elsewhere.
+        let lock = match try_lock_file(&path) {
+            LockOutcome::Busy => {
+                self.status = tr(lang, "File is open in another instance.").to_owned();
+                return;
+            }
+            LockOutcome::Acquired(f) => Some(f),
+            LockOutcome::Unsupported => None,
+        };
         let text = match std::fs::read_to_string(&path) {
             Ok(t) => t,
             Err(e) => {
                 self.status = format!("{} {e}", tr(lang, "Read failed:"));
-                return;
+                return; // `lock` dropped here → released
             }
         };
         // Detect whether the file already carried a change journal.
@@ -607,8 +650,9 @@ impl PlannerApp {
                 } else {
                     LogKind::LoadedFileNoHistory { name }
                 });
-                // This becomes the current file; nothing unsaved yet.
+                // This becomes the current (locked) file; nothing unsaved yet.
                 self.current_file = Some(path.clone());
+                self.current_lock = lock; // releases the previous lock, if any
                 self.saved_baseline = self.plan.clone();
                 // Session undo restarts for the freshly loaded plan.
                 self.undo_stack.clear();
@@ -1068,7 +1112,47 @@ fn date_edit(ui: &mut egui::Ui, date: &mut NaiveDate) {
     }
 }
 
-/// Number of days in the given month.
+/// Result of trying to take the single-instance lock for a file.
+enum LockOutcome {
+    /// Lock acquired; hold this handle to keep it (dropping it releases).
+    Acquired(std::fs::File),
+    /// Another instance already holds the lock.
+    Busy,
+    /// Locking couldn't be performed (e.g. unsupported FS); proceed without it.
+    Unsupported,
+}
+
+/// Path of the lock sidecar for `path`: a hashed name in the temp dir, so the
+/// user's folder stays clean and the leftover file never causes an unlink race.
+fn lock_path_for(path: &Path) -> PathBuf {
+    use std::hash::{Hash, Hasher};
+    // `absolute` (unlike `canonicalize`) doesn't require the file to exist, so a
+    // brand-new Save-As target hashes the same before and after it's created.
+    let abs = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    abs.to_string_lossy().hash(&mut h);
+    std::env::temp_dir().join(format!("housingplanner-{:016x}.lock", h.finish()))
+}
+
+/// Try to take an exclusive single-instance lock for `path`.
+fn try_lock_file(path: &Path) -> LockOutcome {
+    let file = match std::fs::OpenOptions::new()
+        .create(true)
+        .read(true)
+        .write(true)
+        .truncate(false)
+        .open(lock_path_for(path))
+    {
+        Ok(f) => f,
+        Err(_) => return LockOutcome::Unsupported,
+    };
+    match file.try_lock() {
+        Ok(()) => LockOutcome::Acquired(file),
+        Err(std::fs::TryLockError::WouldBlock) => LockOutcome::Busy,
+        Err(std::fs::TryLockError::Error(_)) => LockOutcome::Unsupported,
+    }
+}
+
 /// Compact "MM-DD HH:MM" rendering of an RFC 3339 timestamp for the changelog.
 fn short_time(rfc3339: &str) -> String {
     chrono::DateTime::parse_from_rfc3339(rfc3339)
@@ -1076,6 +1160,7 @@ fn short_time(rfc3339: &str) -> String {
         .unwrap_or_else(|_| rfc3339.to_owned())
 }
 
+/// Number of days in the given month.
 fn days_in_month(year: i32, month: u32) -> u32 {
     let (ny, nm) = if month == 12 {
         (year + 1, 1)
@@ -1140,6 +1225,21 @@ fn about_contents(ui: &mut egui::Ui, logo: Option<&egui::TextureHandle>, lang: L
 
 #[cfg(test)]
 mod tests {
+    use super::{try_lock_file, LockOutcome};
+
+    #[test]
+    fn second_lock_of_same_file_is_busy() {
+        let path = std::env::temp_dir().join(format!("hp-locktest-{}.json", std::process::id()));
+        // First lock succeeds; keep the handle alive to hold it.
+        let _held = match try_lock_file(&path) {
+            LockOutcome::Acquired(f) => f,
+            // If the platform can't lock, the feature degrades to a no-op — skip.
+            _ => return,
+        };
+        // A second attempt for the same file must report it as busy.
+        assert!(matches!(try_lock_file(&path), LockOutcome::Busy));
+    }
+
     #[test]
     fn embedded_icon_is_valid_png() {
         // The window icon and About-window logo both decode this; make sure the

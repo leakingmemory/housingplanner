@@ -290,6 +290,7 @@ fn sv(en: &'static str) -> &'static str {
         "Discard" => "Förkasta",
         "Cancel" => "Avbryt",
         "untitled" => "namnlös",
+        "File is open in another instance." => "Filen är öppen i en annan instans.",
         // Fallback: English
         other => other,
     }
@@ -436,6 +437,7 @@ fn nb(en: &'static str) -> &'static str {
         "Discard" => "Forkast",
         "Cancel" => "Avbryt",
         "untitled" => "uten navn",
+        "File is open in another instance." => "Filen er åpen i en annen instans.",
         // Fallback: English
         other => other,
     }
@@ -584,6 +586,7 @@ fn nn(en: &'static str) -> &'static str {
         "Discard" => "Forkast",
         "Cancel" => "Avbryt",
         "untitled" => "utan namn",
+        "File is open in another instance." => "Fila er open i ei anna instans.",
         // Fallback: English
         other => other,
     }
@@ -734,6 +737,7 @@ fn se(en: &'static str) -> &'static str {
         "Discard" => "Hilgo",
         "Cancel" => "Gaskkalduhte",
         "untitled" => "namahis",
+        "File is open in another instance." => "Fiila lea rabas eará instánssas.",
         // Fallback: English
         other => other,
     }
@@ -880,6 +884,7 @@ fn da(en: &'static str) -> &'static str {
         "Discard" => "Kassér",
         "Cancel" => "Annuller",
         "untitled" => "unavngivet",
+        "File is open in another instance." => "Filen er åben i en anden instans.",
         // Fallback: English
         other => other,
     }
@@ -1028,6 +1033,7 @@ fn uk(en: &'static str) -> &'static str {
         "Discard" => "Відхилити",
         "Cancel" => "Скасувати",
         "untitled" => "без назви",
+        "File is open in another instance." => "Файл відкрито в іншому екземплярі.",
         // Fallback: English
         other => other,
     }
@@ -1176,6 +1182,7 @@ fn de(en: &'static str) -> &'static str {
         "Discard" => "Verwerfen",
         "Cancel" => "Abbrechen",
         "untitled" => "unbenannt",
+        "File is open in another instance." => "Die Datei ist in einer anderen Instanz geöffnet.",
         // Fallback: English
         other => other,
     }
@@ -1326,6 +1333,7 @@ fn fr(en: &'static str) -> &'static str {
         "Discard" => "Abandonner",
         "Cancel" => "Annuler",
         "untitled" => "sans titre",
+        "File is open in another instance." => "Le fichier est ouvert dans une autre instance.",
         // Fallback: English
         other => other,
     }
@@ -1456,6 +1464,7 @@ fn it(en: &'static str) -> &'static str {
         "Discard" => "Scarta",
         "Cancel" => "Annulla",
         "untitled" => "senza nome",
+        "File is open in another instance." => "Il file è aperto in un'altra istanza.",
         // Fallback: English
         other => other,
     }
@@ -1584,6 +1593,7 @@ fn es(en: &'static str) -> &'static str {
         "Discard" => "Descartar",
         "Cancel" => "Cancelar",
         "untitled" => "sin título",
+        "File is open in another instance." => "El archivo está abierto en otra instancia.",
         // Fallback: English
         other => other,
     }
@@ -1710,6 +1720,7 @@ fn nl(en: &'static str) -> &'static str {
         "Discard" => "Verwerpen",
         "Cancel" => "Annuleren",
         "untitled" => "naamloos",
+        "File is open in another instance." => "Het bestand is geopend in een ander exemplaar.",
         // Fallback: English
         other => other,
     }
@@ -1836,6 +1847,7 @@ fn ru(en: &'static str) -> &'static str {
         "Discard" => "Не сохранять",
         "Cancel" => "Отмена",
         "untitled" => "без названия",
+        "File is open in another instance." => "Файл открыт в другом экземпляре.",
         // Fallback: English
         other => other,
     }
@@ -1962,6 +1974,7 @@ fn isl(en: &'static str) -> &'static str {
         "Discard" => "Henda",
         "Cancel" => "Hætta við",
         "untitled" => "ónefnt",
+        "File is open in another instance." => "Skráin er opin í öðru tilviki.",
         // Fallback: English
         other => other,
     }
@@ -2089,6 +2102,7 @@ fn kl(en: &'static str) -> &'static str {
         "Discard" => "Discard",
         "Cancel" => "Cancel",
         "untitled" => "untitled",
+        "File is open in another instance." => "File is open in another instance.",
         // Fallback: English
         other => other,
     }
@@ -2216,6 +2230,7 @@ fn fo(en: &'static str) -> &'static str {
         "Discard" => "Vraka",
         "Cancel" => "Angra",
         "untitled" => "ónevnt",
+        "File is open in another instance." => "Fílan er opin í øðrum tilviki.",
         // Fallback: English
         other => other,
     }
@@ -2342,6 +2357,7 @@ fn el(en: &'static str) -> &'static str {
         "Discard" => "Απόρριψη",
         "Cancel" => "Άκυρο",
         "untitled" => "χωρίς τίτλο",
+        "File is open in another instance." => "Το αρχείο είναι ανοιχτό σε άλλο στιγμιότυπο.",
         // Fallback: English
         other => other,
     }
