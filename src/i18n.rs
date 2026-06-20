@@ -22,6 +22,7 @@ pub enum Lang {
     Spanish,
     Dutch,
     Russian,
+    Icelandic,
 }
 
 impl Default for Lang {
@@ -32,7 +33,7 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 13] = [
+    pub const ALL: [Lang; 14] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
@@ -46,6 +47,7 @@ impl Lang {
         Lang::Spanish,
         Lang::Dutch,
         Lang::Russian,
+        Lang::Icelandic,
     ];
 
     /// Native name shown in the language picker.
@@ -64,6 +66,7 @@ impl Lang {
             Lang::Spanish => "Español",
             Lang::Dutch => "Nederlands",
             Lang::Russian => "Русский",
+            Lang::Icelandic => "Íslenska",
         }
     }
 
@@ -98,6 +101,8 @@ impl Lang {
             Lang::Dutch
         } else if v.starts_with("ru") {
             Lang::Russian
+        } else if v.starts_with("is") {
+            Lang::Icelandic
         } else {
             Lang::English
         }
@@ -120,6 +125,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::Spanish => es(en),
         Lang::Dutch => nl(en),
         Lang::Russian => ru(en),
+        Lang::Icelandic => isl(en),
     }
 }
 
@@ -1812,6 +1818,132 @@ fn ru(en: &'static str) -> &'static str {
         "Discard" => "Не сохранять",
         "Cancel" => "Отмена",
         "untitled" => "без названия",
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Icelandic translations, keyed by the English source string. Unknown strings
+/// fall back to English.
+fn isl(en: &'static str) -> &'static str {
+    match en {
+        "📊 Overview" => "📊 Yfirlit",
+        "👥 Groups" => "👥 Hópar",
+        "🧍 Persons" => "🧍 Einstaklingar",
+        "🏠 Housings" => "🏠 Húsnæði",
+        "From:" => "Frá:",
+        "Days:" => "Dagar:",
+        "Zoom:" => "Aðdráttur:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "Eða Ctrl/Cmd + skrun (klíptu á snertiplatta) yfir tímalínuna"
+        }
+        "Today" => "Í dag",
+        "Fit to stays" => "Laga að dvölum",
+        "📂 Load…" => "📂 Opna…",
+        "ℹ About" => "ℹ Um",
+        "Language" => "Tungumál",
+        "Saved →" => "Vistað →",
+        "Loaded ←" => "Hlaðið ←",
+        "Save failed:" => "Vistun mistókst:",
+        "Encode failed:" => "Kóðun mistókst:",
+        "Read failed:" => "Lestur mistókst:",
+        "Parse failed:" => "Þáttun mistókst:",
+        "File save is not available on Android yet." => {
+            "Vistun í skrá er ekki enn í boði á Android."
+        }
+        "File load is not available on Android yet." => {
+            "Hleðsla úr skrá er ekki enn í boði á Android."
+        }
+        "Housing Planner plan" => "Housing Planner-áætlun",
+        "About / Licenses" => "Um / Leyfi",
+        "Version" => "Útgáfa",
+        "Plan who stays where, and when." => "Skipuleggðu hver dvelur hvar og hvenær.",
+        "📋 Copy dependency licenses" => "📋 Afrita leyfi háðra pakka",
+        "This application" => "Þetta forrit",
+        "Third-party dependencies" => "Pakkar þriðja aðila",
+        "Welcome to Housing Planner" => "Velkomin í Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Bættu við húsnæði, hópum og fólki í flipunum að ofan —"
+        }
+        "📋 Load example data" => "📋 Hlaða dæmigögnum",
+        "Add a housing in the Housings tab to start planning." => {
+            "Bættu við húsnæði í Húsnæði-flipanum til að byrja að skipuleggja."
+        }
+        "Group" => "Hópur",
+        "Person" => "Einstaklingur",
+        "Housing" => "Húsnæði",
+        "➕ New" => "➕ Nýtt",
+        "Stays:" => "Dvalir:",
+        "Stays (individual):" => "Dvalir (einstakar):",
+        "➕ Add stay" => "➕ Bæta við dvöl",
+        "Add a housing and a person/group first." => {
+            "Bættu fyrst við húsnæði og einstaklingi/hópi."
+        }
+        "(no stays)" => "(engar dvalir)",
+        "(group)" => "(hópur)",
+        "No groups yet — add one." => "Engir hópar enn — bættu við einum.",
+        "🗑 Delete group" => "🗑 Eyða hópi",
+        "Members:" => "Meðlimir:",
+        "(no members)" => "(engir meðlimir)",
+        "➕ Add existing…" => "➕ Bæta við fyrirliggjandi…",
+        "➕ New person" => "➕ Nýr einstaklingur",
+        "Select or create a group." => "Veldu eða búðu til hóp.",
+        "No stays for this group yet." => "Engar dvalir fyrir þennan hóp enn.",
+        "No persons yet — add one." => "Engir einstaklingar enn — bættu við einum.",
+        "— no group —" => "— enginn hópur —",
+        "🗑 Delete person" => "🗑 Eyða einstaklingi",
+        "Select or create a person." => "Veldu eða búðu til einstakling.",
+        "No stays for this person yet." => "Engar dvalir fyrir þennan einstakling enn.",
+        "No housings yet — add one." => "Ekkert húsnæði enn — bættu við einu.",
+        "Capacity" => "Rými",
+        "Notes:" => "Athugasemdir:",
+        "🗑 Delete housing" => "🗑 Eyða húsnæði",
+        "Select or create a housing." => "Veldu eða búðu til húsnæði.",
+        "No stays in this housing yet." => "Engar dvalir í þessu húsnæði enn.",
+        "cap" => "rými",
+        "To:" => "Til:",
+        "Nights:" => "Nætur:",
+        "People:" => "Fólk:",
+        "⚠ Also booked elsewhere at the same time" => "⚠ Einnig bókað annars staðar á sama tíma",
+        "<deleted person>" => "<eyddur einstaklingur>",
+        "<deleted group>" => "<eyddur hópur>",
+        "📜 Changelog" => "📜 Breytingaskrá",
+        "↩ Undo last change" => "↩ Afturkalla síðustu breytingu",
+        "entries" => "færslur",
+        "No changes yet." => "Engar breytingar enn.",
+        "(no group)" => "(enginn hópur)",
+        "Created housing" => "Húsnæði búið til",
+        "Deleted housing" => "Húsnæði eytt",
+        "Renamed housing" => "Húsnæði endurnefnt",
+        "Changed capacity of" => "Rými breytt fyrir",
+        "Edited notes of" => "Athugasemdir breyttar fyrir",
+        "Created group" => "Hópur búinn til",
+        "Deleted group" => "Hópi eytt",
+        "Renamed group" => "Hópur endurnefndur",
+        "Changed colour of" => "Litur breyttur fyrir",
+        "Added person" => "Einstaklingi bætt við",
+        "Deleted person" => "Einstaklingi eytt",
+        "Renamed person" => "Einstaklingur endurnefndur",
+        "Changed group of" => "Hópi breytt fyrir",
+        "Added stay" => "Dvöl bætt við",
+        "Removed stay" => "Dvöl fjarlægð",
+        "Moved stay" => "Dvöl færð",
+        "Changed occupant of stay" => "Íbúa dvalar breytt",
+        "Changed dates of stay" => "Dagsetningum dvalar breytt",
+        "Loaded example data" => "Dæmigögn hlaðin",
+        "Loaded plan from file" => "Áætlun hlaðin úr skrá",
+        "Loaded a plan with no change history" => "Hlóð áætlun án breytingasögu",
+        "Undid" => "Afturkallað",
+        "💾 Save" => "💾 Vista",
+        "Save As…" => "Vista sem…",
+        "Unsaved changes" => "Óvistaðar breytingar",
+        "You have unsaved changes. Save before closing?" => {
+            "Þú ert með óvistaðar breytingar. Vista áður en lokað er?"
+        }
+        "Save" => "Vista",
+        "Discard" => "Henda",
+        "Cancel" => "Hætta við",
+        "untitled" => "ónefnt",
         // Fallback: English
         other => other,
     }
