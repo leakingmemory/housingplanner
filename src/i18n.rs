@@ -19,6 +19,7 @@ pub enum Lang {
     German,
     French,
     Italian,
+    Spanish,
 }
 
 impl Default for Lang {
@@ -29,7 +30,7 @@ impl Default for Lang {
 
 impl Lang {
     /// All languages, for building a selector.
-    pub const ALL: [Lang; 10] = [
+    pub const ALL: [Lang; 11] = [
         Lang::English,
         Lang::Swedish,
         Lang::Norwegian,
@@ -40,6 +41,7 @@ impl Lang {
         Lang::German,
         Lang::French,
         Lang::Italian,
+        Lang::Spanish,
     ];
 
     /// Native name shown in the language picker.
@@ -55,6 +57,7 @@ impl Lang {
             Lang::German => "Deutsch",
             Lang::French => "Français",
             Lang::Italian => "Italiano",
+            Lang::Spanish => "Español",
         }
     }
 
@@ -83,6 +86,8 @@ impl Lang {
             Lang::French
         } else if v.starts_with("it") {
             Lang::Italian
+        } else if v.starts_with("es") {
+            Lang::Spanish
         } else {
             Lang::English
         }
@@ -102,6 +107,7 @@ pub fn tr(lang: Lang, en: &'static str) -> &'static str {
         Lang::German => de(en),
         Lang::French => fr(en),
         Lang::Italian => it(en),
+        Lang::Spanish => es(en),
     }
 }
 
@@ -1414,6 +1420,134 @@ fn it(en: &'static str) -> &'static str {
         "Discard" => "Scarta",
         "Cancel" => "Annulla",
         "untitled" => "senza nome",
+        // Fallback: English
+        other => other,
+    }
+}
+
+/// Spanish translations, keyed by the English source string. Unknown strings
+/// fall back to English.
+fn es(en: &'static str) -> &'static str {
+    match en {
+        "📊 Overview" => "📊 Resumen",
+        "👥 Groups" => "👥 Grupos",
+        "🧍 Persons" => "🧍 Personas",
+        "🏠 Housings" => "🏠 Alojamientos",
+        "From:" => "Desde:",
+        "Days:" => "Días:",
+        "Zoom:" => "Zoom:",
+        "Or Ctrl/Cmd + scroll (pinch on trackpad) over the timeline" => {
+            "O Ctrl/Cmd + desplazamiento (pellizco en el panel táctil) sobre la línea de tiempo"
+        }
+        "Today" => "Hoy",
+        "Fit to stays" => "Ajustar a las estancias",
+        "📂 Load…" => "📂 Abrir…",
+        "ℹ About" => "ℹ Acerca de",
+        "Language" => "Idioma",
+        "Saved →" => "Guardado →",
+        "Loaded ←" => "Cargado ←",
+        "Save failed:" => "Error al guardar:",
+        "Encode failed:" => "Error al codificar:",
+        "Read failed:" => "Error al leer:",
+        "Parse failed:" => "Error al analizar:",
+        "File save is not available on Android yet." => {
+            "Guardar en archivo aún no está disponible en Android."
+        }
+        "File load is not available on Android yet." => {
+            "Cargar desde archivo aún no está disponible en Android."
+        }
+        "Housing Planner plan" => "Plan de Housing Planner",
+        "About / Licenses" => "Acerca de / Licencias",
+        "Version" => "Versión",
+        "Plan who stays where, and when." => "Planifica quién se aloja dónde y cuándo.",
+        "📋 Copy dependency licenses" => "📋 Copiar licencias de dependencias",
+        "This application" => "Esta aplicación",
+        "Third-party dependencies" => "Dependencias de terceros",
+        "Welcome to Housing Planner" => "Bienvenido a Housing Planner",
+        "Add housings, groups and people in the tabs above —" => {
+            "Añade alojamientos, grupos y personas en las pestañas de arriba —"
+        }
+        "📋 Load example data" => "📋 Cargar datos de ejemplo",
+        "Add a housing in the Housings tab to start planning." => {
+            "Añade un alojamiento en la pestaña Alojamientos para empezar a planificar."
+        }
+        "Group" => "Grupo",
+        "Person" => "Persona",
+        "Housing" => "Alojamiento",
+        "➕ New" => "➕ Nuevo",
+        "Stays:" => "Estancias:",
+        "Stays (individual):" => "Estancias (individuales):",
+        "➕ Add stay" => "➕ Añadir estancia",
+        "Add a housing and a person/group first." => {
+            "Añade primero un alojamiento y una persona/un grupo."
+        }
+        "(no stays)" => "(sin estancias)",
+        "(group)" => "(grupo)",
+        "No groups yet — add one." => "Aún no hay grupos — añade uno.",
+        "🗑 Delete group" => "🗑 Eliminar grupo",
+        "Members:" => "Miembros:",
+        "(no members)" => "(sin miembros)",
+        "➕ Add existing…" => "➕ Añadir existente…",
+        "➕ New person" => "➕ Nueva persona",
+        "Select or create a group." => "Selecciona o crea un grupo.",
+        "No stays for this group yet." => "Aún no hay estancias para este grupo.",
+        "No persons yet — add one." => "Aún no hay personas — añade una.",
+        "— no group —" => "— sin grupo —",
+        "🗑 Delete person" => "🗑 Eliminar persona",
+        "Select or create a person." => "Selecciona o crea una persona.",
+        "No stays for this person yet." => "Aún no hay estancias para esta persona.",
+        "No housings yet — add one." => "Aún no hay alojamientos — añade uno.",
+        "Capacity" => "Capacidad",
+        "Notes:" => "Notas:",
+        "🗑 Delete housing" => "🗑 Eliminar alojamiento",
+        "Select or create a housing." => "Selecciona o crea un alojamiento.",
+        "No stays in this housing yet." => "Aún no hay estancias en este alojamiento.",
+        "cap" => "cap",
+        "To:" => "Hasta:",
+        "Nights:" => "Noches:",
+        "People:" => "Personas:",
+        "⚠ Also booked elsewhere at the same time" => {
+            "⚠ También reservado en otro lugar al mismo tiempo"
+        }
+        "<deleted person>" => "<persona eliminada>",
+        "<deleted group>" => "<grupo eliminado>",
+        "📜 Changelog" => "📜 Registro de cambios",
+        "↩ Undo last change" => "↩ Deshacer último cambio",
+        "entries" => "entradas",
+        "No changes yet." => "Aún no hay cambios.",
+        "(no group)" => "(sin grupo)",
+        "Created housing" => "Alojamiento creado",
+        "Deleted housing" => "Alojamiento eliminado",
+        "Renamed housing" => "Alojamiento renombrado",
+        "Changed capacity of" => "Capacidad modificada de",
+        "Edited notes of" => "Notas editadas de",
+        "Created group" => "Grupo creado",
+        "Deleted group" => "Grupo eliminado",
+        "Renamed group" => "Grupo renombrado",
+        "Changed colour of" => "Color modificado de",
+        "Added person" => "Persona añadida",
+        "Deleted person" => "Persona eliminada",
+        "Renamed person" => "Persona renombrada",
+        "Changed group of" => "Grupo modificado de",
+        "Added stay" => "Estancia añadida",
+        "Removed stay" => "Estancia eliminada",
+        "Moved stay" => "Estancia movida",
+        "Changed occupant of stay" => "Ocupante de la estancia modificado",
+        "Changed dates of stay" => "Fechas de la estancia modificadas",
+        "Loaded example data" => "Datos de ejemplo cargados",
+        "Loaded plan from file" => "Plan cargado desde archivo",
+        "Loaded a plan with no change history" => "Se cargó un plan sin historial de cambios",
+        "Undid" => "Deshecho",
+        "💾 Save" => "💾 Guardar",
+        "Save As…" => "Guardar como…",
+        "Unsaved changes" => "Cambios sin guardar",
+        "You have unsaved changes. Save before closing?" => {
+            "Tienes cambios sin guardar. ¿Guardar antes de cerrar?"
+        }
+        "Save" => "Guardar",
+        "Discard" => "Descartar",
+        "Cancel" => "Cancelar",
+        "untitled" => "sin título",
         // Fallback: English
         other => other,
     }
