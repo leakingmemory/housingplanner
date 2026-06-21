@@ -1,6 +1,6 @@
 name: housingplanner
 base: core22
-version: '0.1.0'
+version: '0.2.0'
 license: MIT
 title: Housing Planner
 summary: Plan who stays where, and when

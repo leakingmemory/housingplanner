@@ -36,17 +36,12 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-windows-${{ hashFiles('**/Cargo.lock') }}
-
+      # No dependency cache here on purpose. This job runs via `workflow_run`
+      # (a privileged context with write access to the Actions cache) and builds
+      # the checked-out code — `cargo build` runs build scripts/proc-macros, i.e.
+      # arbitrary code. Writing to the shared cache from here would be a
+      # cache-poisoning vector, so we do a clean build instead (it runs only once
+      # per release).
       - name: Build release binary
         run: cargo build --release
 

@@ -1,6 +1,6 @@
 [package]
 name = "housingplanner"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Housing & stay planner: visualize who stays where, and when, over time."
 license = "MIT"
