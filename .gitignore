@@ -3,3 +3,9 @@
 Cargo.lock.bak
 .DS_Store
 .idea/
+
+# snapcraft build artifacts (the `snap/` source dir is kept)
+/parts/
+/stage/
+/prime/
+*.snap
