@@ -1,5 +1,5 @@
 name: housingplanner
-base: core22
+base: core24
 version: '0.2.0'
 license: MIT
 title: Housing Planner
