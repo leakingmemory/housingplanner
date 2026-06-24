@@ -9,3 +9,5 @@ Cargo.lock.bak
 /stage/
 /prime/
 *.snap
+# Vendored dependency sources (generated for license extraction)
+/vendor
